@@ -1,0 +1,41 @@
+state_path: "checkpoints/nequix-healthy-2d-pft.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft.pkl"
+finetune_from: "models/nequix-mp-1.nqx"
+
+# dataset specific — curated healthy subset from workflow/FINAL_RESULTS_HEALTHY
+# (41 train / 5 val materials, split with fixed seed 42)
+train_path: "data/healthy_2d/train.aselmdb"
+val_path: "data/healthy_2d/val.aselmdb"
+
+# computed once via dataset_stats() during the smoke test — baked in so every
+# training run doesn't need to recompute them
+avg_n_edges: 4117.609756097561
+avg_n_nodes: 108.3170731707317
+max_n_edges: 8856
+max_n_nodes: 216
+
+# no MPtrj cotraining data available locally — cotraining disabled below
+# (extra_train_steps: 0), these paths just need to point at *something* valid
+# since the training loop always constructs the extra dataset objects.
+extra_train_path: "data/healthy_2d/train.aselmdb"
+extra_val_path: "data/healthy_2d/val.aselmdb"
+
+# training specific
+extra_train_steps: 0  # cotraining disabled — see note above
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true  # hessian target needs grad-of-grad through the full network; without oeq kernels this OOMs on a single GPU without checkpointing
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2  # approximate batch size NOTE: per device -- small on purpose: only 41 train examples total, and the hessian grad-of-grad is memory-hungry per node/edge
+n_graph: 4   # maximum number of graphs in a batch (+1 for padding)
+n_epochs: 150
+energy_weight: 0.0  # our structures carry no real energy label (relaxed equilibrium, zero-filled)
+force_weight: 20.0  # forces are genuinely ~0 at these relaxed equilibrium structures
+stress_weight: 5.0  # stress is genuinely ~0 at these relaxed equilibrium structures
+hessian_weight: 100.0  # main training signal — force-constant Hessian from phonopy
+val_every: 2
+log_every: 10  # more frequent than upstream default (100) since this dataset is tiny (~3 steps/epoch)
+ema_decay: 0.999
+kernel: false  # openequivariance (oeq extra) not installed in this env — set true after installing it for speed
