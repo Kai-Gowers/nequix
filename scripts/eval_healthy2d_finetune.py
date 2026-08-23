@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Batch-evaluate a Nequix PFT fine-tune against baseline on the v2 73-healthy-material
-split (workflow/nequix_datasets/v2_73healthy_split/): the 6 in-distribution val
-materials plus the 20 held-out generalization-test materials (14 novel-chemistry +
-6 novel-pairing, tagged via workflow/nequix_staging/holdout_novel_pairing.txt).
+Batch-evaluate a Nequix PFT fine-tune against baseline on a healthy-2D dataset split
+under workflow/nequix_datasets/<split-dir>/ (--dataset-dir, default v2_73healthy_split):
+val materials plus whatever generalization-test set that split defines — v2's holdout/
+(14 novel-chemistry + 6 novel-pairing, tagged via holdout_novel_pairing.txt) or v3's
+test/ (all "_3R" materials, tagged homobilayer vs heterobilayer by name).
 
 Unlike scripts/compare_phonon_dispersion.py (which reads its DFT reference from the
 transient, per-host workflow/phonopy_{mono,bi}layer_examples/<name>_staticpoint/
@@ -16,7 +17,8 @@ different host and only FINAL_RESULTS_HEALTHY syncs between hosts.
 Usage:
   uv run python scripts/eval_healthy2d_finetune.py \\
       --finetuned-model wandb/offline-run-XXXX/files/checkpoint.nqx \\
-      --baseline-model nequix-mp-1
+      --baseline-model nequix-mp-1 \\
+      --dataset-dir v3_2h3r
 """
 
 import argparse
@@ -31,8 +33,6 @@ from ase import Atoms
 
 ROOT = Path(__file__).parent.parent
 WORKFLOW_ROOT = ROOT.parent / "workflow"
-DATASET_DIR = WORKFLOW_ROOT / "nequix_datasets" / "v2_73healthy_split"
-STAGING_DIR = WORKFLOW_ROOT / "nequix_staging"
 FINAL_RESULTS_HEALTHY = WORKFLOW_ROOT / "FINAL_RESULTS_HEALTHY"
 
 
@@ -45,15 +45,26 @@ def read_manifest(path: Path) -> list[str]:
     return names
 
 
-def build_material_groups() -> dict[str, str]:
-    """material name -> one of 'val', 'novel_chemistry', 'novel_pairing'."""
-    val_names = read_manifest(DATASET_DIR / "val" / "materials.txt")
-    holdout_names = read_manifest(DATASET_DIR / "holdout" / "materials.txt")
-    novel_pairing_names = set(read_manifest(STAGING_DIR / "holdout_novel_pairing.txt"))
-
+def build_material_groups(dataset_dir: Path) -> dict[str, str]:
+    """material name -> group label. 'val' always; the test-set label(s) depend on
+    which generalization axis this dataset_dir's split holds out (v2: holdout/ with
+    novel-chemistry/novel-pairing tags; v3+: test/ with a homobilayer/heterobilayer
+    "_3R" split, tagged directly from the name rather than a separate tag file)."""
+    val_names = read_manifest(dataset_dir / "val" / "materials.txt")
     groups = {name: "val" for name in val_names}
-    for name in holdout_names:
-        groups[name] = "novel_pairing" if name in novel_pairing_names else "novel_chemistry"
+
+    if (dataset_dir / "holdout").exists():
+        holdout_names = read_manifest(dataset_dir / "holdout" / "materials.txt")
+        novel_pairing_names = set(read_manifest(dataset_dir / "holdout_novel_pairing.txt"))
+        for name in holdout_names:
+            groups[name] = "novel_pairing" if name in novel_pairing_names else "novel_chemistry"
+    elif (dataset_dir / "test").exists():
+        test_names = read_manifest(dataset_dir / "test" / "materials.txt")
+        for name in test_names:
+            groups[name] = "test_3R_homobilayer" if name.endswith("_bilayer_3R") else "test_3R_heterobilayer"
+    else:
+        raise FileNotFoundError(f"Neither 'holdout' nor 'test' split found under {dataset_dir}")
+
     return groups
 
 
@@ -181,23 +192,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--finetuned-model", required=True, help="Path to fine-tuned .nqx checkpoint")
     parser.add_argument("--baseline-model", default="nequix-mp-1", help="Pretrained model name or path for comparison")
-    parser.add_argument("--output-dir", default=str(ROOT / "phonon_comparisons" / "v2_eval"), help="Where to write results.csv, summary, and plots")
+    parser.add_argument("--dataset-dir", default="v2_73healthy_split", help="Split dir name under workflow/nequix_datasets/ (default: v2_73healthy_split)")
+    parser.add_argument("--output-dir", default=None, help="Where to write results.csv, summary, and plots (default: phonon_comparisons/<dataset-dir>_eval)")
     parser.add_argument("--no-plots", action="store_true", help="Skip generating per-material dispersion PNGs")
-    parser.add_argument("--materials", nargs="*", default=None, help="Restrict to these material names (default: all val + holdout)")
+    parser.add_argument("--materials", nargs="*", default=None, help="Restrict to these material names (default: all val + test/holdout)")
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir)
+    dataset_dir = WORKFLOW_ROOT / "nequix_datasets" / args.dataset_dir
+    output_dir = Path(args.output_dir) if args.output_dir else ROOT / "phonon_comparisons" / f"{args.dataset_dir}_eval"
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_dir = None if args.no_plots else output_dir / "plots"
 
-    groups = build_material_groups()
+    groups = build_material_groups(dataset_dir)
     materials = args.materials if args.materials else sorted(groups.keys())
 
     rows = []
     for i, material in enumerate(materials):
         group = groups.get(material)
         if group is None:
-            print(f"  ✗ {material}: not in val/holdout manifests, skipping", file=sys.stderr)
+            print(f"  ✗ {material}: not in val/test manifests, skipping", file=sys.stderr)
             continue
         print(f"[{i + 1}/{len(materials)}] {material} ({group}) ...")
         try:
@@ -218,7 +231,8 @@ def main() -> None:
         writer.writerows(rows)
     print(f"\nWrote per-material results → {csv_path}")
 
-    for group in ("val", "novel_chemistry", "novel_pairing"):
+    group_order = {"val": 0, "novel_pairing": 1, "novel_chemistry": 2, "test_3R_homobilayer": 1, "test_3R_heterobilayer": 2}
+    for group in sorted({r["group"] for r in rows}, key=lambda g: group_order.get(g, 99)):
         print_group_summary(rows, group)
 
 

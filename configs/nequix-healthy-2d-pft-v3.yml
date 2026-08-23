@@ -1,0 +1,47 @@
+state_path: "checkpoints/nequix-healthy-2d-pft-v3.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft-v3.pkl"
+finetune_from: "models/nequix-mp-1.nqx"
+
+# dataset specific — 2H -> 3R stacking generalization split, curated from
+# workflow/FINAL_RESULTS_HEALTHY (73 materials total). All 23 materials whose
+# name ends "_3R" are held out entirely as the generalization test set; the
+# remaining 50 (13 monolayers + 24 "_2H" bilayers + 13 other heterostructures)
+# are split 40 train / 10 val (random.Random(42).sample, plain random — not
+# stratified). See workflow/nequix_datasets/v3_2h3r/{train,val,test}/materials.txt
+# for the exact material lists, and nequix/scripts/eval_healthy2d_finetune.py
+# (adapt DATASET_DIR to v3_2h3r when evaluating) for the held-out test.
+train_path: "data/healthy_2d_v3/train.aselmdb"
+val_path: "data/healthy_2d_v3/val.aselmdb"
+
+# avg/max_n_edges/n_nodes deliberately NOT baked in here (unlike v1) — this is
+# a new dataset (40 materials, different mix than v1/v2) so the old numbers
+# don't apply. nequix/pft/train.py::train() auto-computes these via
+# dataset_stats() when any of the 4 stats keys are missing from config — a
+# one-time cost at the start of this run, not worth precomputing separately
+# for a dataset this size.
+
+# no MPtrj cotraining data available locally — cotraining disabled below
+# (extra_train_steps: 0), these paths just need to point at *something* valid
+# since the training loop always constructs the extra dataset objects.
+extra_train_path: "data/healthy_2d_v3/train.aselmdb"
+extra_val_path: "data/healthy_2d_v3/val.aselmdb"
+
+# training specific
+extra_train_steps: 0  # cotraining disabled — see note above
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true  # hessian target needs grad-of-grad through the full network; without oeq kernels this OOMs on a single GPU without checkpointing
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2  # approximate batch size NOTE: per device -- small on purpose, same reasoning as v1/v2: hessian grad-of-grad is memory-hungry per node/edge.
+n_graph: 4   # maximum number of graphs in a batch (+1 for padding)
+n_epochs: 150
+energy_weight: 0.0  # our structures carry no real energy label (relaxed equilibrium, zero-filled)
+force_weight: 20.0  # forces are genuinely ~0 at these relaxed equilibrium structures
+stress_weight: 5.0  # stress is genuinely ~0 at these relaxed equilibrium structures
+hessian_weight: 100.0  # main training signal — force-constant Hessian from phonopy
+val_every: 2
+log_every: 10  # more frequent than upstream default (100) since this dataset is tiny (~3 steps/epoch)
+ema_decay: 0.999
+kernel: false  # openequivariance (oeq extra) not installed in this env — set true after installing it for speed
