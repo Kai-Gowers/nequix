@@ -53,6 +53,10 @@ def build_material_groups(dataset_dir: Path) -> dict[str, str]:
     val_names = read_manifest(dataset_dir / "val" / "materials.txt")
     groups = {name: "val" for name in val_names}
 
+    train_names = read_manifest(dataset_dir / "train" / "materials.txt")
+    for name in train_names:
+        groups[name] = "train"
+
     if (dataset_dir / "holdout").exists():
         holdout_names = read_manifest(dataset_dir / "holdout" / "materials.txt")
         novel_pairing_names = set(read_manifest(dataset_dir / "holdout_novel_pairing.txt"))
