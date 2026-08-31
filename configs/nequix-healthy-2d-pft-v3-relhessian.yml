@@ -1,0 +1,37 @@
+state_path: "checkpoints/nequix-healthy-2d-pft-v3-relhessian.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft-v3-relhessian.pkl"
+finetune_from: "models/nequix-mp-1.nqx"
+
+# Identical to nequix-healthy-2d-pft-v3.yml except hessian_loss_relative below —
+# tests whether normalizing the per-entry Hessian loss by the true magnitude
+# (instead of flat absolute error) closes the Gamma-interlayer-mode regression
+# documented in project_nequix_v3_2h3r_generalization (memory). Same 40-material
+# train / 10-material val split as v3, same held-out val+test eval set, so this
+# is a clean ablation of the loss function alone.
+train_path: "data/healthy_2d_v3/train.aselmdb"
+val_path: "data/healthy_2d_v3/val.aselmdb"
+
+extra_train_path: "data/healthy_2d_v3/train.aselmdb"
+extra_val_path: "data/healthy_2d_v3/val.aselmdb"
+
+# training specific
+extra_train_steps: 0  # cotraining disabled — no MPtrj cotraining data available locally
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true  # hessian target needs grad-of-grad through the full network; without oeq kernels this OOMs on a single GPU without checkpointing
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2
+n_graph: 4
+n_epochs: 150
+energy_weight: 0.0
+force_weight: 20.0
+stress_weight: 5.0
+hessian_weight: 100.0
+hessian_loss_relative: true  # THE ABLATION: normalize per-entry hessian error by |true|+eps instead of flat MAE
+hessian_rel_eps: 0.05  # eV/Angstrom^2 floor — chosen from observed dataset stats: interlayer/vdW force constants sit roughly in this scale, while the ~30-45% of entries near zero (beyond interaction cutoff) get a bounded, near-absolute penalty instead of blowing up
+val_every: 2
+log_every: 10
+ema_decay: 0.999
+kernel: false

@@ -1,0 +1,166 @@
+state_path: "checkpoints/nequix-healthy-2d-fromscratch-v2.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-fromscratch-v2.pkl"
+# NOTE: no finetune_from — from-scratch ablation. Random-init weights, trained
+# only on the 47-material v2 (chemistry-split) training pool, no MPtrj
+# pretraining. Architecture + normalization constants (shift/scale/
+# avg_n_neighbors/atom_energies/atomic_numbers) below are copied verbatim from
+# configs/nequix-mp-1.yml so the network itself is identical to nequix-mp-1's —
+# only the weights (random vs. MPtrj-pretrained) and training data differ. See
+# nequix/pft/train.py::train() for the finetune_from-absent code path this
+# relies on.
+
+# dataset specific — same split as configs/nequix-healthy-2d-pft-v2.yml (47
+# train / 6 val materials out of 73 total, 20 held out). See
+# workflow/nequix_datasets/v2_73healthy_split/{train,val,holdout}/materials.txt
+train_path: "data/healthy_2d_v2/train.aselmdb"
+val_path: "data/healthy_2d_v2/val.aselmdb"
+
+# no MPtrj cotraining data available locally — cotraining disabled below
+# (extra_train_steps: 0); these paths + stats just need to point at *something*
+# valid since the training loop always constructs the extra dataset objects.
+extra_train_path: "data/healthy_2d_v2/train.aselmdb"
+extra_val_path: "data/healthy_2d_v2/val.aselmdb"
+
+atomic_numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 89, 90, 91, 92, 93, 94]
+
+# isolated atom energies (eV) — copied from nequix-mp-1.yml (physical
+# reference constants, not MPtrj-derived "knowledge"; the from-scratch model
+# still needs a per-species energy baseline)
+atom_energies:
+  1: -3.6683144569396973
+  2: -1.3163000345230103
+  3: -3.4831652641296387
+  4: -4.764586448669434
+  5: -7.723288536071777
+  6: -8.40385913848877
+  7: -7.355093955993652
+  8: -7.283683776855469
+  9: -4.895404815673828
+  10: -0.03005797415971756
+  11: -2.7473080158233643
+  12: -2.811192512512207
+  13: -4.856420993804932
+  14: -7.702361583709717
+  15: -6.968142509460449
+  16: -4.674358367919922
+  17: -2.8150434494018555
+  18: -0.06283307820558548
+  19: -2.622321128845215
+  20: -5.3866095542907715
+  21: -7.873931407928467
+  22: -10.264874458312988
+  23: -8.66543197631836
+  24: -9.2335205078125
+  25: -8.309571266174316
+  26: -7.048263072967529
+  27: -5.5792694091796875
+  28: -5.171901702880859
+  29: -3.252624273300171
+  30: -1.2877082824707031
+  31: -3.528157949447632
+  32: -4.709354877471924
+  33: -3.9754624366760254
+  34: -3.887714147567749
+  35: -2.516629219055176
+  36: 6.747716426849365
+  37: -2.577591896057129
+  38: -4.939635276794434
+  39: -10.152220726013184
+  40: -11.842530250549316
+  41: -12.148360252380371
+  42: -8.799700736999512
+  43: -8.797399520874023
+  44: -7.760889530181885
+  45: -6.835111618041992
+  46: -4.8846940994262695
+  47: -2.0629477500915527
+  48: -0.6418149471282959
+  49: -2.785382032394409
+  50: -3.8185558319091797
+  51: -3.5863938331604004
+  52: -2.880044937133789
+  53: -1.6353932619094849
+  54: 9.806041717529297
+  55: -2.7564780712127686
+  56: -4.997802257537842
+  57: -8.92111873626709
+  58: -8.735455513000488
+  59: -8.035662651062012
+  60: -8.260232925415039
+  61: -7.5397539138793945
+  62: -8.160961151123047
+  63: -13.596965789794922
+  64: -18.527551651000977
+  65: -7.6466827392578125
+  66: -8.13962459564209
+  67: -7.610777854919434
+  68: -6.8239006996154785
+  69: -7.813919544219971
+  70: -3.5790491104125977
+  71: -7.460397243499756
+  72: -12.797314643859863
+  73: -14.110695838928223
+  74: -9.345513343811035
+  75: -11.383716583251953
+  76: -9.633197784423828
+  77: -7.3318257331848145
+  78: -5.296637535095215
+  79: -2.371084213256836
+  80: 0.25143736600875854
+  81: -2.319478988647461
+  82: -3.7398195266723633
+  83: -3.4386684894561768
+  89: -5.125858783721924
+  90: -11.000879287719727
+  91: -12.322521209716797
+  92: -13.852907180786133
+  93: -14.94003963470459
+  94: -15.294189453125
+
+# normalization constants copied from nequix-mp-1.yml (needed for model
+# construction; can't be recomputed from this dataset — see note at top)
+avg_n_edges: 1932.8392640079926
+avg_n_neighbors: 57.413687022442645
+avg_n_nodes: 31.196903505120307
+max_n_edges: 34704
+max_n_nodes: 444
+scale: 0.8066479563713074
+shift: 0.16502578765761478
+
+# model specific — identical architecture to nequix-mp-1
+cutoff: 6.0
+hidden_irreps: "128x0e + 64x1o + 32x2e + 32x3o"
+lmax: 3
+n_layers: 4
+radial_basis_size: 8
+radial_mlp_size: 64
+radial_mlp_layers: 2
+radial_polynomial_p: 6.0
+mlp_init_scale: 4.0
+index_weights: false
+layer_norm: true
+kernel: false  # openequivariance (oeq extra) not installed in this env
+
+# training specific
+extra_train_steps: 0  # cotraining disabled — see note above
+optimizer: "adam"
+# 10x the fine-tuning LR (1e-4) — that value is tuned for gently nudging an
+# already-good pretrained model, not for optimizing random-init weights from
+# scratch. No warmup/decay schedule implemented in pft/train.py, so this stays
+# a flat LR; revisit if training is unstable.
+learning_rate: 0.001
+checkpoint_grad_energy: true  # hessian target needs grad-of-grad through the full network; without oeq kernels this OOMs on a single GPU without checkpointing
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2  # per device -- small on purpose, hessian grad-of-grad is memory-hungry per node/edge
+n_graph: 4   # maximum number of graphs in a batch (+1 for padding)
+n_epochs: 600  # 4x the fine-tuning budget — cold-start random init needs more steps to converge; early stopping below should cut this short once val loss plateaus
+early_stopping_patience: 60  # stop if val loss hasn't improved in 60 epochs (30 checks at val_every=2)
+energy_weight: 0.0  # our structures carry no real energy label (relaxed equilibrium, zero-filled)
+force_weight: 20.0  # forces are genuinely ~0 at these relaxed equilibrium structures
+stress_weight: 5.0  # stress is genuinely ~0 at these relaxed equilibrium structures
+hessian_weight: 100.0  # main training signal — force-constant Hessian from phonopy
+val_every: 2
+log_every: 10  # more frequent than upstream default (100) since this dataset is tiny (~3 steps/epoch)
+ema_decay: 0.999

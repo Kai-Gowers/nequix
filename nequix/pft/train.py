@@ -18,7 +18,7 @@ from nequix.data import (
     dataset_stats,
     prefetch,
 )
-from nequix.model import load_model, node_graph_idx, save_model, weight_decay_mask
+from nequix.model import Nequix, load_model, node_graph_idx, save_model, weight_decay_mask
 from nequix.train import evaluate as efs_evaluate
 from nequix.pft.data import PhononDataset
 from nequix.train import loss as efs_loss, save_training_state, load_training_state
@@ -34,6 +34,8 @@ def loss(
     stress_weight=5.0,
     hessian_weight=100.0,
     checkpoint_grad_energy=False,
+    hessian_loss_relative=False,
+    hessian_rel_eps=0.05,
 ):
     def total_energy_fn(positions_eps: tuple[jax.Array, jax.Array]):
         positions, eps = positions_eps
@@ -114,10 +116,16 @@ def loss(
         9 * jnp.sum(graph_mask)
     )
 
-    # MAE
-    hessian_loss = jnp.sum(
-        jnp.abs(hessian_col - graph.nodes["hessian_col"]) * node_mask[:, None]
-    ) / (3 * jnp.sum(node_mask))
+    # MAE, optionally normalized per-entry by the true magnitude (floored via
+    # +eps) so numerically small force constants (e.g. weak interlayer/vdW
+    # coupling) aren't systematically underweighted relative to large ones
+    # (e.g. stiff intralayer/covalent coupling) in the training objective
+    hessian_abs_err = jnp.abs(hessian_col - graph.nodes["hessian_col"])
+    if hessian_loss_relative:
+        hessian_abs_err = hessian_abs_err / (
+            jnp.abs(graph.nodes["hessian_col"]) + hessian_rel_eps
+        )
+    hessian_loss = jnp.sum(hessian_abs_err * node_mask[:, None]) / (3 * jnp.sum(node_mask))
 
     total_loss = (
         energy_weight * energy_loss_per_atom
@@ -164,6 +172,8 @@ def evaluate(
     stress_weight=5.0,
     hessian_weight=100.0,
     checkpoint_grad_energy=False,
+    hessian_loss_relative=False,
+    hessian_rel_eps=0.05,
 ):
     total_metrics = defaultdict(int)
     total_count = 0
@@ -177,6 +187,8 @@ def evaluate(
             stress_weight,
             hessian_weight,
             checkpoint_grad_energy,
+            hessian_loss_relative,
+            hessian_rel_eps,
         )
         total_metrics["loss"] += val_loss * n_graphs
         for k, v in metrics.items():
@@ -192,7 +204,36 @@ def train(config_path):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
-    model, original_config = load_model(config["finetune_from"], config["kernel"])
+    if config.get("finetune_from"):
+        model, original_config = load_model(config["finetune_from"], config["kernel"])
+    else:
+        # from-scratch ablation: random-init weights, but reuse nequix-mp-1's
+        # architecture and normalization constants (shift/scale/avg_n_neighbors/
+        # atom_energies) since this dataset's near-zero-signal equilibrium
+        # structures (zero-filled energy, ~0 forces) can't be used to recompute
+        # them the way a real EFS training set would.
+        config["atom_energies"] = {str(k): v for k, v in config["atom_energies"].items()}
+        model = Nequix(
+            key=jax.random.key(config.get("seed", 0)),
+            n_species=len(config["atomic_numbers"]),
+            hidden_irreps=config["hidden_irreps"],
+            lmax=config["lmax"],
+            cutoff=config["cutoff"],
+            n_layers=config["n_layers"],
+            radial_basis_size=config["radial_basis_size"],
+            radial_mlp_size=config["radial_mlp_size"],
+            radial_mlp_layers=config["radial_mlp_layers"],
+            radial_polynomial_p=config["radial_polynomial_p"],
+            mlp_init_scale=config["mlp_init_scale"],
+            index_weights=config["index_weights"],
+            layer_norm=config["layer_norm"],
+            shift=config["shift"],
+            scale=config["scale"],
+            avg_n_neighbors=config["avg_n_neighbors"],
+            atom_energies=[config["atom_energies"][str(n)] for n in config["atomic_numbers"]],
+            kernel=config["kernel"],
+        )
+        original_config = config
 
     if config["optimizer"] == "muon":
         optim = optax.chain(
@@ -344,6 +385,8 @@ def train(config_path):
             stress_weight=config["stress_weight"],
             hessian_weight=config["hessian_weight"],
             checkpoint_grad_energy=config["checkpoint_grad_energy"],
+            hessian_loss_relative=config.get("hessian_loss_relative", False),
+            hessian_rel_eps=config.get("hessian_rel_eps", 0.05),
         )
 
     extra_train_loss_fn = partial(
@@ -375,6 +418,8 @@ def train(config_path):
     step = jnp.array(0)
     start_epoch = 0
     best_val_loss = float("inf")
+    last_improved_epoch = 0
+    early_stopping_patience = config.get("early_stopping_patience")
     wandb_run_id = None
 
     if "resume_from" in config and Path(config["resume_from"]).exists():
@@ -442,10 +487,13 @@ def train(config_path):
                 config["stress_weight"],
                 config["hessian_weight"],
                 config["checkpoint_grad_energy"],
+                config.get("hessian_loss_relative", False),
+                config.get("hessian_rel_eps", 0.05),
             )
 
             if val_metrics["loss"] < best_val_loss:
                 best_val_loss = val_metrics["loss"]
+                last_improved_epoch = epoch
                 save_model(
                     Path(wandb.run.dir) / "checkpoint.nqx", ema_model, original_config | config
                 )
@@ -483,6 +531,16 @@ def train(config_path):
             logs["epoch"] = epoch
             wandb.log(logs, step=step)
             print(f"epoch {epoch:03d} val metrics: {logs}")
+
+            if (
+                early_stopping_patience is not None
+                and epoch - last_improved_epoch >= early_stopping_patience
+            ):
+                print(
+                    f"early stopping at epoch {epoch}: no val loss improvement for "
+                    f"{early_stopping_patience} epochs (best={best_val_loss})"
+                )
+                break
 
             extra_val_metrics = efs_evaluate(
                 ema_model,
