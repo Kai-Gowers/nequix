@@ -1,0 +1,50 @@
+state_path: "checkpoints/nequix-healthy-2d-pft-v2-mote2.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft-v2-mote2.pkl"
+finetune_from: "models/nequix-mp-1.nqx"
+
+# v2 chemistry-generalization ablation: does GaSe/InSe's isolated-material
+# regression (see project_nequix_v2_73healthy_finetune memory) reflect genuine
+# unseen-chemistry difficulty, or is it specific to Ga/In being intrinsically
+# harder (DFT-wise) than common TMD chemistry? Same 73-material pool and same
+# train/val/holdout *procedure* as v2 (nequix-healthy-2d-pft-v2.yml), but the
+# "novel" element family is swapped from Ga/In to MoTe2 — a common, well-behaved
+# TMD compound. MoTe2 is fully quarantined from training (both its isolated
+# monolayer/homobilayer forms AND every one of its heterobilayer pairings), same
+# as Ga/In was in v2, even though Mo and Te individually remain abundant
+# elsewhere in training via other compounds (MoS2, MoSe2, WTe2, ...). Train
+# shrinks 47->36, holdout grows 20->31 (13 tagged "novel_compound" = all
+# MoTe2-containing materials; novel_pairing shrinks 6->4 since MoTe2_WS2_2H/3R
+# is now novel_compound instead). See
+# workflow/nequix_datasets/v2_mote2_holdout/{train,val,holdout}/materials.txt
+# and holdout_novel_compound.txt / holdout_novel_pairing.txt for exact lists.
+train_path: "data/healthy_2d_v2_mote2/train.aselmdb"
+val_path: "data/healthy_2d_v2_mote2/val.aselmdb"
+
+# avg/max_n_edges/n_nodes intentionally not baked in — different material mix
+# than v2, auto-computed via dataset_stats() at run start (same as v2/v3).
+
+# no MPtrj cotraining data available locally — cotraining disabled below,
+# matching v2/v3.
+extra_train_path: "data/healthy_2d_v2_mote2/train.aselmdb"
+extra_val_path: "data/healthy_2d_v2_mote2/val.aselmdb"
+
+# training specific — byte-for-byte identical to v2 so any result difference is
+# attributable to the held-out element choice, not a recipe change.
+extra_train_steps: 0
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2
+n_graph: 4
+n_epochs: 150
+energy_weight: 0.0
+force_weight: 20.0
+stress_weight: 5.0
+hessian_weight: 100.0
+val_every: 2
+log_every: 10
+ema_decay: 0.999
+kernel: false
