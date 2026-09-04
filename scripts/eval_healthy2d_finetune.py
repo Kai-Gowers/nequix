@@ -59,7 +59,8 @@ def build_material_groups(dataset_dir: Path) -> dict[str, str]:
 
     if (dataset_dir / "holdout").exists():
         holdout_names = read_manifest(dataset_dir / "holdout" / "materials.txt")
-        novel_pairing_names = set(read_manifest(dataset_dir / "holdout_novel_pairing.txt"))
+        novel_pairing_path = dataset_dir / "holdout_novel_pairing.txt"
+        novel_pairing_names = set(read_manifest(novel_pairing_path)) if novel_pairing_path.exists() else set()
         novel_compound_path = dataset_dir / "holdout_novel_compound.txt"
         novel_compound_names = set(read_manifest(novel_compound_path)) if novel_compound_path.exists() else set()
         for name in holdout_names:

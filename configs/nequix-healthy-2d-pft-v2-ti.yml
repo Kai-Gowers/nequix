@@ -1,0 +1,43 @@
+state_path: "checkpoints/nequix-healthy-2d-pft-v2-ti.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft-v2-ti.pkl"
+finetune_from: "models/nequix-mp-1.nqx"
+
+# dataset specific — Ti novel-element quarantine ablation. Same 73-material pool
+# as v2, but re-split so Ti is the ONLY novel chemistry (unlike the v2-on-top-of-
+# Ti design that was considered and rejected): the original v2 holdout (BN, GaSe,
+# InSe, novel-pairing TMD combos — 20 materials) is returned to train here, and
+# every Ti-containing material is held out instead (62 train / 5 val / 6 holdout).
+# Tests whether the v2 "isolated GaSe/InSe regress" finding is Ga/In-specific or
+# just about being a genuinely novel element with no training precedent, using a
+# common TMD-family element (Ti, via TiS2) instead of a different structural
+# family. See workflow/nequix_datasets/v2_ti_holdout/{train,val,holdout}/
+# materials.txt for the exact material lists.
+train_path: "data/healthy_2d_v2_ti_holdout/train.aselmdb"
+val_path: "data/healthy_2d_v2_ti_holdout/val.aselmdb"
+
+# avg/max_n_edges/n_nodes deliberately NOT baked in here (unlike v1) — different
+# material mix than v2, so the old numbers don't apply; auto-computed at start.
+
+# no MPtrj cotraining data available locally — cotraining disabled below
+extra_train_path: "data/healthy_2d_v2_ti_holdout/train.aselmdb"
+extra_val_path: "data/healthy_2d_v2_ti_holdout/val.aselmdb"
+
+# training specific — identical to v2, only paths above differ
+extra_train_steps: 0
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2
+n_graph: 4
+n_epochs: 150
+energy_weight: 0.0
+force_weight: 20.0
+stress_weight: 5.0
+hessian_weight: 100.0
+val_every: 2
+log_every: 10
+ema_decay: 0.999
+kernel: false
