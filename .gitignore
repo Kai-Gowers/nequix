@@ -4,6 +4,8 @@
 md.traj
 logs/
 wandb/
+mace_baseline/checkpoints/
+mace_baseline/models/
 data/*.zip
 data/mptrj-gga-ggapu
 data/mptrj-aselmdb

@@ -42,7 +42,7 @@ from eval_healthy2d_finetune import (  # noqa: E402
 )
 
 
-def evaluate_material(material: str, calc, distance: float, plot_dir: Path = None) -> dict:
+def evaluate_material(material: str, calc, distance: float, plot_dir: Path = None, label: str = "MACE-MP") -> dict:
     ph, q_list, dft_freqs = load_dft_reference(material)
     n_bands = dft_freqs.shape[1]
 
@@ -77,11 +77,11 @@ def evaluate_material(material: str, calc, distance: float, plot_dir: Path = Non
             fig, ax = plt.subplots(figsize=(8, 5))
             ax.plot(q, dft_freqs[:, 0], color="black", lw=1.5, label="DFT (reference)")
             ax.plot(q, dft_freqs[:, 1:], color="black", lw=1.5)
-            ax.plot(q, mace_freqs[:, 0], color="tab:green", lw=1.0, label=f"MACE-MP, RMSE={m['rmse']:.3f}")
+            ax.plot(q, mace_freqs[:, 0], color="tab:green", lw=1.0, label=f"{label}, RMSE={m['rmse']:.3f}")
             ax.plot(q, mace_freqs[:, 1:], color="tab:green", lw=1.0)
             ax.axhline(0, color="gray", lw=0.5)
             ax.set_ylabel("Frequency (THz)")
-            ax.set_title(f"{material} phonon dispersion: DFT vs MACE-MP (no fine-tune)")
+            ax.set_title(f"{material} phonon dispersion: DFT vs {label}")
             ax.legend()
             fig.tight_layout()
             plot_dir.mkdir(parents=True, exist_ok=True)
@@ -95,7 +95,8 @@ def evaluate_material(material: str, calc, distance: float, plot_dir: Path = Non
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model", default="medium", help="MACE-MP model size (small/medium/large)")
+    parser.add_argument("--model", default="medium", help="MACE-MP model size (small/medium/large) -- ignored if --checkpoint-path is given")
+    parser.add_argument("--checkpoint-path", default=None, help="Path to a local fine-tuned MACE checkpoint (.model) to evaluate instead of the zero-shot MACE-MP model")
     parser.add_argument("--device", default="cpu", help="cpu or cuda")
     parser.add_argument("--distance", type=float, default=0.01, help="Finite-displacement distance (Angstrom)")
     parser.add_argument("--output-dir", default=None)
@@ -117,20 +118,30 @@ def main() -> None:
 
     v2_groups = build_material_groups(WORKFLOW_ROOT / "nequix_datasets" / "v2_73healthy_split")
     v3_groups = build_material_groups(WORKFLOW_ROOT / "nequix_datasets" / "v3_2h3r")
+    v4_groups = build_material_groups(WORKFLOW_ROOT / "nequix_datasets" / "v4_tmd_only")
 
-    from mace.calculators import mace_mp
+    if args.checkpoint_path:
+        from mace.calculators import MACECalculator
 
-    print(f"Loading MACE-MP ({args.model}, device={args.device}) ...")
-    calc = mace_mp(model=args.model, device=args.device, default_dtype="float32")
+        print(f"Loading fine-tuned MACE checkpoint {args.checkpoint_path} (device={args.device}) ...")
+        calc = MACECalculator(model_paths=args.checkpoint_path, device=args.device, default_dtype="float32")
+    else:
+        from mace.calculators import mace_mp
+
+        print(f"Loading MACE-MP ({args.model}, device={args.device}) ...")
+        calc = mace_mp(model=args.model, device=args.device, default_dtype="float32")
+
+    label = "MACE fine-tuned (v4_tmd_only forces)" if args.checkpoint_path else "MACE-MP (no fine-tune)"
 
     rows = []
     for i, material in enumerate(materials):
         print(f"[{i + 1}/{len(materials)}] {material} ...")
         t0 = time.time()
         try:
-            row = evaluate_material(material, calc, args.distance, plot_dir)
+            row = evaluate_material(material, calc, args.distance, plot_dir, label=label)
             row["v2_group"] = v2_groups.get(material, "n/a")
             row["v3_group"] = v3_groups.get(material, "n/a")
+            row["v4_group"] = v4_groups.get(material, "n/a")
             rows.append(row)
             print(f"    RMSE={row['rmse_mace']:.4f} THz  ({time.time() - t0:.1f}s)")
         except Exception as e:
