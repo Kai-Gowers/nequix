@@ -1,8 +1,11 @@
-# checkpoints
+# checkpoints/*.pkl = resumable optimizer/training state (ignored, 11 MB each)
+# checkpoints/*.nqx = deployable fine-tuned model (tracked, ~2.8 MB each)
 *.pkl
 
 md.traj
-logs/
+/slurm-*.out        # SLURM logs belong in logs/ (all sbatch scripts set --output=logs/%x-%j.out)
+mace_baseline/logs/
+*.aselmdb-lock
 wandb/
 mace_baseline/checkpoints/
 mace_baseline/models/

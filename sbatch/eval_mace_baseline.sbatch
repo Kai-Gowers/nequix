@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=eval_mace_baseline
+#SBATCH --output=logs/%x-%j.out
 #SBATCH --partition=short
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=8

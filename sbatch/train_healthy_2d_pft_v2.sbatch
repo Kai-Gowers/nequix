@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=nequix_pft_healthy2d_v2
+#SBATCH --output=logs/%x-%j.out
 #SBATCH --partition=short
 #SBATCH --time=05:00:00
 #SBATCH --gres=gpu:1

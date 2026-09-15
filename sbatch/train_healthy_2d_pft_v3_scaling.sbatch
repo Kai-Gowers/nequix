@@ -1,5 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=nequix_pft_2h3r_scaling
+#SBATCH --output=logs/%x-%j.out
+# NOTE: override the job name at submit time so the log is self-describing:
+#   sbatch --job-name=<experiment> sbatch/train_healthy_2d_pft_v3_scaling.sbatch ...
 #SBATCH --partition=short
 #SBATCH --time=05:00:00
 #SBATCH --gres=gpu:1

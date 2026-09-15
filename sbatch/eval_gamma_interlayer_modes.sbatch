@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=nequix_gamma_interlayer
+#SBATCH --output=logs/%x-%j.out
 #SBATCH --partition=short
 #SBATCH --time=02:00:00
 #SBATCH --gres=gpu:1

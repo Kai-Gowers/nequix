@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=mace_finetune_v4_tmd
+#SBATCH --output=logs/%x-%j.out
 #SBATCH --partition=short
 #SBATCH --time=05:00:00
 #SBATCH --gres=gpu:1

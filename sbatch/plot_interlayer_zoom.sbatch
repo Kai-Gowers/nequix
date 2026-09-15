@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=nequix_interlayer_zoom
+#SBATCH --output=logs/%x-%j.out
 #SBATCH --partition=short
 #SBATCH --time=01:00:00
 #SBATCH --gres=gpu:1
