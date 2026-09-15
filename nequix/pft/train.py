@@ -497,6 +497,14 @@ def train(config_path):
                 save_model(
                     Path(wandb.run.dir) / "checkpoint.nqx", ema_model, original_config | config
                 )
+                if "state_path" in config:
+                    # also export the deployable model next to the state pickle, e.g.
+                    # checkpoints/<config-name>.nqx, so it has a stable name outside wandb/
+                    save_model(
+                        Path(config["state_path"]).with_suffix(".nqx"),
+                        ema_model,
+                        original_config | config,
+                    )
 
             # always save training state to wandb dir
             save_training_state(
