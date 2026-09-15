@@ -64,12 +64,15 @@ The same split is referred to by three names depending on where you are:
 
 ## Conventions for new experiments
 
+0. **Default base model is `nequix-omat-1`** (`finetune_from: models/nequix-omat-1.nqx`), decided
+   2026-09-15 after the base-model ablation above. Everything before that date used `nequix-mp-1`;
+   only compare a new run against an mp-1 run if that is the explicit point of the experiment.
 1. Config: `configs/nequix-healthy-2d-<exp>.yml`, with `state_path: checkpoints/nequix-healthy-2d-<exp>.pkl`.
    Training then writes both the state pickle and `checkpoints/nequix-healthy-2d-<exp>.nqx`.
 2. Submit with an explicit job name so the log is self-describing:
    `sbatch --job-name=<exp> sbatch/<script>.sbatch <args>` → `logs/<exp>-<jobid>.out`.
 3. Eval into an explicit, experiment-specific directory:
-   `sbatch --job-name=<exp>_eval sbatch/eval_healthy2d_finetune.sbatch checkpoints/<exp>.nqx <split> <baseline> phonon_comparisons/<split>_<evaltype>_<variant>`.
+   `sbatch --job-name=<exp>_eval sbatch/eval_healthy2d_finetune.sbatch checkpoints/<exp>.nqx <split> [baseline, default nequix-omat-1] phonon_comparisons/<split>_<evaltype>_<variant>`.
    The eval script's default output dir is `<split>_eval`, which would overwrite an earlier run
    on the same split.
 4. Add a row above when you submit, fill in the headline when results land, and note the day in
