@@ -1,0 +1,54 @@
+state_path: "checkpoints/nequix-healthy-2d-pft-v4-tmd-oam.pkl"
+resume_from: "checkpoints/nequix-healthy-2d-pft-v4-tmd-oam.pkl"
+finetune_from: "models/nequix-oam-1.nqx"
+
+# BASE-MODEL ABLATION (2026-09-15): byte-identical to nequix-healthy-2d-pft-v4-tmd.yml
+# except finetune_from/state paths — starts from nequix-oam-1 instead of nequix-mp-1,
+# to test whether the pretrained base model matters on the same 48-TMD data/split.
+#
+# dataset specific — TMD-only tightening retrain. Restricted to the 48 pure
+# Mo/W TMD materials confirmed on 2026-09-07 to be the publication scope (all
+# individually clear the 0.15 THz near-DFT threshold under the v2 73-material
+# fine-tune). All 25 non-TMD materials (Ti, Ga/In, BN, Xenes) removed entirely
+# from train/val/holdout — goal is to see whether dedicating full training
+# capacity to TMD chemistry tightens margins further, especially for the
+# closest-to-threshold held-out novel-pairing materials (MoSe2_WSe2_2H was the
+# worst case in v2 at 0.1343 THz).
+#
+# Split: 39 train / 3 val / 6 holdout (39/48 in v2 kept the same tags, plus
+# WSe2 moved from val to train so every constituent monolayer of the 6 held-out
+# heterobilayer pairings — WS2, WSe2, MoSe2, MoTe2 — is present in training,
+# not just validation). Held-out set is unchanged from v2's novel-pairing test:
+# WS2_WSe2_2H/3R, MoSe2_WSe2_2H/3R, MoTe2_WS2_2H/3R.
+# See workflow/nequix_datasets/v4_tmd_only/{train,val,holdout}/materials.txt
+# for the exact material lists.
+train_path: "data/healthy_2d_v4_tmd_only/train.aselmdb"
+val_path: "data/healthy_2d_v4_tmd_only/val.aselmdb"
+
+# avg/max_n_edges/n_nodes deliberately NOT baked in here — different, smaller
+# material mix than v2, so the old numbers don't apply; auto-computed at start.
+
+# no MPtrj cotraining data available locally — cotraining disabled below
+extra_train_path: "data/healthy_2d_v4_tmd_only/train.aselmdb"
+extra_val_path: "data/healthy_2d_v4_tmd_only/val.aselmdb"
+
+# training specific — identical to v2, only paths above differ, so any result
+# difference is attributable to the TMD-only data restriction, not a recipe change
+extra_train_steps: 0
+optimizer: "adam"
+learning_rate: 0.0001
+checkpoint_grad_energy: true
+
+grad_clip_norm: 100.0
+weight_decay: 1.0e-3
+batch_size: 2
+n_graph: 4
+n_epochs: 150
+energy_weight: 0.0
+force_weight: 20.0
+stress_weight: 5.0
+hessian_weight: 100.0
+val_every: 2
+log_every: 10
+ema_decay: 0.999
+kernel: false
