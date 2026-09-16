@@ -1,0 +1,8 @@
+# Nequix dataset (bare PBE = reference PBE+D3 minus explicit D3) — 3 materials
+# Source split: /home/gowers/twist/workflow/nequix_datasets/v4_tmd_only/val
+# Generated: uv run python /home/gowers/twist/nequix/explicit_dispersion/strip_d3_dataset.py
+# Count: 3
+
+MoS2_WSe2_3R
+MoS2_bilayer_2H
+MoSe2_WTe2_2H
