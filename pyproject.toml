@@ -81,3 +81,6 @@ oeq = [
 pft = [
     "phonopy>=2.43.1",
 ]
+dispersion = [
+    "dftd3>=1.2",
+]
