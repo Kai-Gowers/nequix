@@ -90,5 +90,42 @@ sbatch --job-name=nequix_eval_omat_zeroshot_plusd3 sbatch/eval_explicit_dispersi
 
 ## Results
 
-Filled in from `phonon_comparisons/v4_tmd_only_omat_bared3_eval/` and
-`phonon_comparisons/v4_tmd_only_omat_zeroshot_plusd3_eval/` when the jobs finish; see `EXPERIMENTS.md`.
+Both jobs finished 2026-09-16 (train 3012446, evals 3012447 / 3013019). Whole-band RMSE vs DFT in THz,
+`v4_tmd_only` split (39 train / 3 val / 6 held-out heterobilayers).
+
+### Main comparison: bare-PBE fine-tune + explicit D3 vs implicit-D3 fine-tune (both from `nequix-omat-1`)
+
+`phonon_comparisons/v4_tmd_only_omat_bared3_eval/results.csv` (`rmse_ft` = bared3 ft + analytic D3 Hessian,
+`rmse_base` = `checkpoints/nequix-healthy-2d-pft-v4-tmd-omat.nqx`, identical to `v4_tmd_only_omat_eval` to 1e-6).
+
+| group | n | bared3 ft + D3 | implicit ft | bared3 wins |
+|---|---|---|---|---|
+| all 48 | 48 | 0.0512 | 0.0506 | 23/48 |
+| train | 39 | 0.0488 | 0.0482 | 20/39 |
+| val | 3 | 0.0564 | 0.0542 | 1/3 |
+| held-out | 6 | 0.0644 | 0.0648 | 2/6 |
+| worst held-out | | 0.110 (MoSe2_WSe2_2H) | 0.107 (MoSe2_WSe2_2H) | |
+
+Acoustic / optical split is equally flat (0.064/0.048 vs 0.063/0.047). Training-side val Hessian MAE
+0.0040 (bared3) vs 0.0044 (implicit) — the bare-PBE target is marginally easier to fit, but that does
+not translate into band-structure accuracy once D3 is added back.
+
+**Conclusion: null result.** Delta-learning the dispersion explicitly neither helps nor hurts the
+fine-tuned model on this split. The fine-tune already absorbs the (smooth, small: max |FC_D3| ≤ 0.07
+eV/Å²) D3 contribution without difficulty. Not worth the extra inference dependency; keep the implicit
+recipe as default.
+
+### Zero-shot: is omat-1's 0.155 THz error mostly missing dispersion?
+
+`phonon_comparisons/v4_tmd_only_omat_zeroshot_plusd3_eval/results.csv` (`rmse_ft` = omat-1 + D3,
+`rmse_base` = plain omat-1).
+
+| group | n | omat-1 + D3 | omat-1 | +D3 wins |
+|---|---|---|---|---|
+| all 48 | 48 | 0.1535 | 0.1548 | 46/48 |
+| held-out | 6 | 0.1278 | 0.1288 | 5/6 |
+| worst | | 0.227 (MoTe2) | 0.229 (MoTe2) | |
+
+Adding D3 is consistently but negligibly better (~1%). **No** — omat-1's residual error on these TMDs is
+not dominated by the missing vdW treatment (OMat24 is PBE without D3); the 0.155 THz residual is
+elsewhere, and only the fine-tune (0.155 → 0.051) removes it.
