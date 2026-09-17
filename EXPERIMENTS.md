@@ -38,6 +38,8 @@ before fine-tuning. Dates point at the daily log in `../logs/YYYY-MM-DD.md`.
 | v4 base = nequix-omat-1 | `-pft-v4-tmd-omat` | same as v4 | 3011413 → `slurm-3011413.out` | `-pft-v4-tmd-omat.nqx` (`…k6mjzlcb`) | 3011637 → `v4_tmd_only_omat_eval/` (baseline `nequix-omat-1`) | Mean 0.051 (mp-1 ft 0.072), held-out 6 mean 0.065, worst 0.107; better than mp-1 ft on 45/48. Un-fine-tuned omat-1 baseline already 0.155 mean vs mp-1 1.13. 2026-09-15 |
 | **v4 explicit-D3 (delta learning)** omat base | `-pft-v4-tmd-omat-bared3` | `explicit_dispersion/data/v4_tmd_only_bare_d3` (= `v4_tmd_only` with D3 stripped) | 3012446 → `nequix_pft_v4_tmd_omat_bared3-3012446.out` | `-pft-v4-tmd-omat-bared3.nqx` | 3013019 (afterok:3012446) → `v4_tmd_only_omat_bared3_eval/` (ft + D3 vs implicit-D3 omat ft) | **Null result.** All-48 mean 0.051 vs 0.051 THz (23/48 wins), held-out 6 0.064 vs 0.065, worst held-out MoSe2_WSe2_2H 0.110 vs 0.107; val Hessian MAE 0.0040 vs 0.0044. Explicit D3 neither helps nor hurts. See `explicit_dispersion/README.md`. 2026-09-15/16 |
 | zero-shot omat-1 + explicit D3 | — (no training) | eval on `v4_tmd_only` | — | `models/nequix-omat-1.nqx` | 3012447 → `v4_tmd_only_omat_zeroshot_plusd3_eval/` (omat-1 + D3 vs omat-1) | Negligible: all-48 mean 0.1535 vs 0.1548 THz (46/48 wins but ~1% gain), held-out 6 0.128 vs 0.129. omat-1's residual error is not missing dispersion. 2026-09-15/16 |
+| **v4-omat end-to-end, template start, relax positions** | — (eval only, `-pft-v4-tmd-omat`) | eval on `v4_tmd_only`; start = `workflow/template_structures/` (pre-relaxation template, overrides-first) | — | `-pft-v4-tmd-omat.nqx` | pending → `v4_tmd_only_omat_template_relaxpos_eval/` (`--relax positions`; both models relax with their own forces; also `rmse_ft_template_unrelaxed`) | pending. Answers "does 0.051 THz survive when the model, not DFT, relaxes?" 2026-09-17 |
+| **v4-omat end-to-end, template start, relax positions + in-plane cell** | — (eval only) | same | — | same | pending → `v4_tmd_only_omat_template_relaxcell_eval/` (`--relax cell`, `FrechetCellFilter` xx/yy/xy, c fixed) | pending. Adds the model's own lattice constant. Caveat: 16/48 templates carry DFT-derived override `a` (ISIF=4) so the cell test measures drift *from* DFT there. 2026-09-17 |
 | MACE-MP zero-shot baseline | — (`sbatch/eval_mace_baseline.sbatch`) | evaluated on all 73 | — | — (foundation model) | 2954482 → `mace_mp_baseline/` | Mean 1.52 / median 1.24 vs nequix-mp-1's 1.35 / 1.07: comparably weak. 2026-09-01 |
 | MACE forces-only fine-tune | — (CLI flags in `sbatch/train_mace_finetune.sbatch`) | `mace_baseline/data/v4_tmd_only_forces/` (from `v4_tmd_only`) | 2980394 → `slurm-2980394.out` | `mace_baseline/models/mace_finetune_v4_tmd_only.model` (ignored) | 2980457 → `mace_finetune_v4_tmd_only/` | Held-out 6: 1.35 → 0.87 vs Nequix PFT 0.09; no Hessian loss available. 2026-09-07 |
 
@@ -66,6 +68,12 @@ The same split is referred to by three names depending on where you are:
 48-TMD publication numbers come from.
 
 ## Conventions for new experiments
+
+**Geometry mode of an eval.** Unless the eval dir name says `template_relax*`, every phonon eval is
+**fixed-geometry**: the model Hessian is evaluated at the DFT-relaxed `FINAL_RESULTS_HEALTHY` structure
+(a Hessian-accuracy benchmark, not a deployment test). `template_relaxpos` / `template_relaxcell` evals
+start from `workflow/template_structures/<mat>/POSCAR` (the workflow's pre-relaxation template) and let
+each model relax positions (or positions + in-plane cell) before the Hessian — say which kind a number is.
 
 0. **Default base model is `nequix-omat-1`** (`finetune_from: models/nequix-omat-1.nqx`), decided
    2026-09-15 after the base-model ablation above. Everything before that date used `nequix-mp-1`;

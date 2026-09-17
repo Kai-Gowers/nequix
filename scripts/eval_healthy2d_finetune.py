@@ -19,6 +19,15 @@ Usage:
       --finetuned-model wandb/offline-run-XXXX/files/checkpoint.nqx \\
       --baseline-model nequix-mp-1 \\
       --dataset-dir v3_2h3r
+
+Geometry modes (--relax):
+  none       (default) fixed-geometry benchmark: Hessian at the DFT-relaxed structure.
+  positions  end-to-end: start from the workflow's pre-relaxation template
+             (--start-dir, default workflow/template_structures/<material>/POSCAR), relax
+             atomic positions with the model at the template cell, then Hessian + bands.
+  cell       as above but also relax the in-plane cell (c stays fixed). Each model (fine-tuned,
+             baseline) relaxes with its own forces/stress. Frequencies are always compared with
+             DFT on the DFT band.yaml q-list (fractional, so still the same Gamma-K-M-Gamma path).
 """
 
 import argparse
@@ -105,6 +114,69 @@ def run_qpoints_frequencies(ph, q_list) -> np.ndarray:
     return ph.get_qpoints_dict()["frequencies"]
 
 
+def surface_gap(atoms) -> float:
+    """Surface-to-surface interlayer gap (largest z-gap) in Angstrom; 0 for a monolayer."""
+    if len(atoms) <= 3:
+        return 0.0
+    return float(np.diff(np.sort(atoms.positions[:, 2])).max())
+
+
+def relax_unitcell(atoms: Atoms, calc, mode: str):
+    """Relax a 1x1 unit cell with the model. mode="positions": atoms only; mode="cell": atoms +
+    in-plane cell (Voigt mask xx, yy, xy; c fixed). FixSymmetry keeps the hexagonal 1x1
+    symmetry against float noise (DFT relaxed the same 1x1 cell). Returns (relaxed, info)."""
+    from ase.constraints import FixSymmetry
+    from ase.filters import FrechetCellFilter
+    from ase.optimize import BFGS
+    from ase.units import GPa
+
+    atoms = atoms.copy()
+    atoms.pbc = True
+    atoms.calc = calc
+    scaled0 = atoms.get_scaled_positions().copy()
+    a0 = float(atoms.cell.lengths()[0])
+    forces0 = atoms.get_forces()
+    stress0 = atoms.get_stress(voigt=True)
+    info = {
+        "fmax0": float(np.linalg.norm(forces0, axis=1).max()),
+        "stress0_GPa": float(np.mean(stress0[:2]) / GPa),
+        "gap0_A": surface_gap(atoms),
+    }
+    atoms.set_constraint(FixSymmetry(atoms))
+    target = FrechetCellFilter(atoms, mask=[1, 1, 0, 0, 0, 1]) if mode == "cell" else atoms
+    opt = BFGS(target, logfile=None, maxstep=0.1)
+    converged = bool(opt.run(fmax=1e-3, steps=1000))
+    atoms.set_constraint()
+    forces = atoms.get_forces()
+    stress = atoms.get_stress(voigt=True)
+    pos_ref = scaled0 @ atoms.cell[:]  # template positions carried along with any cell change
+    a1 = float(atoms.cell.lengths()[0])
+    info.update({
+        "steps": int(opt.get_number_of_steps()),
+        "converged": converged,
+        "fmax_final": float(np.linalg.norm(forces, axis=1).max()),
+        "stress_final_GPa": float(np.mean(stress[:2]) / GPa),
+        "max_disp_A": float(np.linalg.norm(atoms.get_positions() - pos_ref, axis=1).max()),
+        "a_final": a1,
+        "da_pct": 100.0 * (a1 - a0) / a0,
+        "gap_A": surface_gap(atoms),
+    })
+    atoms.calc = None
+    return atoms, info
+
+
+def phonopy_from_ase(atoms: Atoms, supercell_matrix, primitive_matrix):
+    from phonopy import Phonopy
+    from phonopy.structure.atoms import PhonopyAtoms
+
+    unitcell = PhonopyAtoms(
+        symbols=atoms.get_chemical_symbols(),
+        cell=atoms.cell[:],
+        scaled_positions=atoms.get_scaled_positions(),
+    )
+    return Phonopy(unitcell, supercell_matrix=supercell_matrix, primitive_matrix=primitive_matrix, log_level=0)
+
+
 def branch_rmse_mae(pred: np.ndarray, ref: np.ndarray) -> dict:
     n_bands = ref.shape[1]
     n_acoustic = min(3, n_bands)
@@ -126,7 +198,16 @@ def branch_rmse_mae(pred: np.ndarray, ref: np.ndarray) -> dict:
     return out
 
 
-def evaluate_material(material: str, group: str, finetuned_model: str, baseline_model: str, plot_dir: Path = None) -> dict:
+def evaluate_material(
+    material: str,
+    group: str,
+    finetuned_model: str,
+    baseline_model: str,
+    plot_dir: Path = None,
+    relax_mode: str = "none",
+    start_dir: Path = None,
+    relaxed_dir: Path = None,
+) -> dict:
     ph, q_list, dft_freqs = load_dft_reference(material)
     supercell_ase = phonopy_atoms_to_ase(ph.supercell)
     n_bands = dft_freqs.shape[1]
@@ -134,17 +215,47 @@ def evaluate_material(material: str, group: str, finetuned_model: str, baseline_
     from nequix.calculator import NequixCalculator
 
     calc_ft = NequixCalculator(model_path=finetuned_model, backend="jax", use_kernel=False)
-    hessian_ft = calc_ft.get_hessian(supercell_ase)
-    ph.force_constants = hessian_ft
-    ft_freqs = run_qpoints_frequencies(ph, q_list)
-
     if Path(baseline_model).exists():
         calc_base = NequixCalculator(model_path=baseline_model, backend="jax", use_kernel=False)
     else:
         calc_base = NequixCalculator(model_name=baseline_model, backend="jax", use_kernel=False)
-    hessian_base = calc_base.get_hessian(supercell_ase)
-    ph.force_constants = hessian_base
-    base_freqs = run_qpoints_frequencies(ph, q_list)
+
+    extra = {}
+    if relax_mode == "none":
+        ph.force_constants = calc_ft.get_hessian(supercell_ase)
+        ft_freqs = run_qpoints_frequencies(ph, q_list)
+        ph.force_constants = calc_base.get_hessian(supercell_ase)
+        base_freqs = run_qpoints_frequencies(ph, q_list)
+    else:
+        from ase.io import read as ase_read
+        from ase.io import write as ase_write
+
+        template = ase_read(str(start_dir / material / "POSCAR"))
+        template.pbc = True
+
+        def model_bands(calc, tag):
+            relaxed, info = relax_unitcell(template, calc, relax_mode)
+            ph_m = phonopy_from_ase(relaxed, ph.supercell_matrix, ph.primitive_matrix)
+            ph_m.force_constants = calc.get_hessian(phonopy_atoms_to_ase(ph_m.supercell))
+            if relaxed_dir is not None:
+                relaxed_dir.mkdir(parents=True, exist_ok=True)
+                ase_write(str(relaxed_dir / f"{material}_{tag}.vasp"), relaxed, format="vasp", direct=True)
+            for k, v in info.items():
+                extra[f"{tag}_{k}"] = v
+            print(
+                f"    relax[{tag}] steps={info['steps']} conv={info['converged']} fmax0={info['fmax0']:.3f}"
+                f" stress0={info['stress0_GPa']:+.2f}GPa da={info['da_pct']:+.2f}% gap={info['gap0_A']:.3f}->{info['gap_A']:.3f}"
+            )
+            return run_qpoints_frequencies(ph_m, q_list)
+
+        ft_freqs = model_bands(calc_ft, "ft")
+        base_freqs = model_bands(calc_base, "base")
+        if relax_mode == "positions":
+            # how bad is "no relaxation at all" (fine-tuned model at the raw template)?
+            ph_t = phonopy_from_ase(template, ph.supercell_matrix, ph.primitive_matrix)
+            ph_t.force_constants = calc_ft.get_hessian(phonopy_atoms_to_ase(ph_t.supercell))
+            unrelaxed_freqs = run_qpoints_frequencies(ph_t, q_list)
+            extra["rmse_ft_template_unrelaxed"] = branch_rmse_mae(unrelaxed_freqs, dft_freqs)["rmse"]
 
     m_ft = branch_rmse_mae(ft_freqs, dft_freqs)
     m_base = branch_rmse_mae(base_freqs, dft_freqs)
@@ -158,7 +269,10 @@ def evaluate_material(material: str, group: str, finetuned_model: str, baseline_
         "mae_ft": m_ft["mae"], "mae_base": m_base["mae"],
         "rmse_ft_acoustic": m_ft["rmse_acoustic"], "rmse_base_acoustic": m_base["rmse_acoustic"],
         "rmse_ft_optical": m_ft["rmse_optical"], "rmse_base_optical": m_base["rmse_optical"],
+        "min_freq_ft": float(ft_freqs.min()), "min_freq_base": float(base_freqs.min()),
+        "relax_mode": relax_mode,
     }
+    row.update(extra)
 
     if plot_dir is not None:
         try:
@@ -175,7 +289,8 @@ def evaluate_material(material: str, group: str, finetuned_model: str, baseline_
             ax.plot(q, ft_freqs[:, 1:], color="tab:blue", lw=1.0)
             ax.axhline(0, color="gray", lw=0.5)
             ax.set_ylabel("Frequency (THz)")
-            ax.set_title(f"{material} ({group}) phonon dispersion: DFT vs Nequix")
+            geom = "DFT structure" if relax_mode == "none" else f"template start, model-relaxed {relax_mode}"
+            ax.set_title(f"{material} ({group}) phonon dispersion: DFT vs Nequix ({geom})")
             ax.legend()
             fig.tight_layout()
             plot_dir.mkdir(parents=True, exist_ok=True)
@@ -208,6 +323,19 @@ def main() -> None:
     parser.add_argument("--output-dir", default=None, help="Where to write results.csv, summary, and plots (default: phonon_comparisons/<dataset-dir>_eval)")
     parser.add_argument("--no-plots", action="store_true", help="Skip generating per-material dispersion PNGs")
     parser.add_argument("--materials", nargs="*", default=None, help="Restrict to these material names (default: all val + test/holdout)")
+    parser.add_argument(
+        "--relax",
+        choices=["none", "positions", "cell"],
+        default="none",
+        help="none: Hessian at the DFT-relaxed structure (default). positions/cell: start from the "
+        "workflow template (--start-dir) and relax with each model before the Hessian",
+    )
+    parser.add_argument(
+        "--start-dir",
+        default=str(WORKFLOW_ROOT / "template_structures"),
+        help="Directory of <material>/POSCAR template starts for --relax positions|cell "
+        "(default: workflow/template_structures, from scripts/generate_template_start_structures.py)",
+    )
     args = parser.parse_args()
 
     dataset_dir = WORKFLOW_ROOT / "nequix_datasets" / args.dataset_dir
@@ -226,7 +354,11 @@ def main() -> None:
             continue
         print(f"[{i + 1}/{len(materials)}] {material} ({group}) ...")
         try:
-            row = evaluate_material(material, group, args.finetuned_model, args.baseline_model, plot_dir)
+            row = evaluate_material(
+                material, group, args.finetuned_model, args.baseline_model, plot_dir,
+                relax_mode=args.relax, start_dir=Path(args.start_dir),
+                relaxed_dir=None if args.relax == "none" else output_dir / "relaxed_structures",
+            )
             rows.append(row)
             print(f"    RMSE ft={row['rmse_ft']:.4f}  base={row['rmse_base']:.4f}  THz")
         except Exception as e:
@@ -238,7 +370,8 @@ def main() -> None:
 
     csv_path = output_dir / "results.csv"
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        fieldnames = list(dict.fromkeys(k for r in rows for k in r.keys()))
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
     print(f"\nWrote per-material results → {csv_path}")
