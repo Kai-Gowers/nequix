@@ -1,0 +1,34 @@
+cpu-bind=MASK - g002, task  0  0 [1949353]: mask 0x4444444400 set
+
+=== MoS2_twist_m1_near60: 42 atoms, a_m=8.45 A, theta=21.78678929826181, k=3 (378 supercell atoms), relax=positions
+  relax[ft] steps=31 conv=True fmax 0.487->0.0010 eV/A  max_disp=0.114 A  layer_slide=0.000 A  gap 2.938->3.133 A  stress_inplane=+0.443 GPa  E/atom=-7.31189 eV
+  phonons[ft] supercell 378 atoms, Hessian+bands 112 s; Gamma acoustic before ASR [0.001  0.001  0.0014] -> after [-0. -0. -0.] THz; lowest Gamma optical [0.026 0.026 0.84 ] THz; min -0.0000, max 13.873 THz
+
+=== MoS2_twist_m5_near60: 546 atoms, a_m=30.45 A, theta=6.008983197766148, k=1 (546 supercell atoms), relax=positions
+  relax[ft] steps=68 conv=True fmax 0.603->0.0009 eV/A  max_disp=0.258 A  layer_slide=0.000 A  gap 2.938->2.842 A  stress_inplane=+0.447 GPa  E/atom=-7.31265 eV
+  phonons[ft] supercell 546 atoms, Hessian+bands 369 s; Gamma acoustic before ASR [-0.0146 -0.0146 -0.0005] -> after [-0.0146 -0.0146  0.    ] THz; lowest Gamma optical [0.    0.    0.505] THz; min -0.0146, max 13.870 THz
+
+=== MoS2_twist_m4_near60: 366 atoms, a_m=24.93 A, theta=7.340993016630217, k=1 (366 supercell atoms), relax=positions
+  relax[ft] steps=61 conv=True fmax 0.596->0.0010 eV/A  max_disp=0.215 A  layer_slide=0.000 A  gap 2.938->2.909 A  stress_inplane=+0.447 GPa  E/atom=-7.31234 eV
+  phonons[ft] supercell 366 atoms, Hessian+bands 164 s; Gamma acoustic before ASR [-0.0006 -0.0006 -0.0001] -> after [-0. -0.  0.] THz; lowest Gamma optical [0.023 0.023 0.755] THz; min -0.0000, max 13.871 THz
+
+=== MoS2_twist_m2_near60: 114 atoms, a_m=13.91 A, theta=13.173551107258918, k=2 (456 supercell atoms), relax=positions
+  relax[ft] steps=39 conv=True fmax 0.558->0.0009 eV/A  max_disp=0.129 A  layer_slide=0.000 A  gap 2.938->3.091 A  stress_inplane=+0.447 GPa  E/atom=-7.31177 eV
+  follow[ft] 2 imaginary Gamma mode(s) below -0.02 THz (softest -0.0578); displacing 0.3 A along it and re-relaxing (round 1)
+  relax[ft] steps=41 conv=True fmax 0.064->0.0002 eV/A  max_disp=0.323 A  layer_slide=0.568 A  gap 3.069->3.088 A  stress_inplane=+0.446 GPa  E/atom=-7.31178 eV
+  follow[ft] 1 imaginary Gamma mode(s) below -0.02 THz (softest -0.0784); displacing 0.3 A along it and re-relaxing (round 2)
+  relax[ft] steps=107 conv=True fmax 0.068->0.0002 eV/A  max_disp=0.258 A  layer_slide=0.423 A  gap 3.072->3.101 A  stress_inplane=+0.446 GPa  E/atom=-7.31179 eV
+  phonons[ft] supercell 456 atoms, Hessian+bands 160 s; Gamma acoustic before ASR [-0.0006  0.0001  0.0007] -> after [-0. -0. -0.] THz; lowest Gamma optical [0.078 0.078 0.831] THz; min -0.0000, max 13.872 THz
+
+=== MoS2_twist_m3_near60: 222 atoms, a_m=19.42 A, theta=9.430007907896421, k=2 (888 supercell atoms), relax=positions
+  relax[ft] steps=59 conv=True fmax 0.584->0.0009 eV/A  max_disp=0.166 A  layer_slide=0.000 A  gap 2.938->3.006 A  stress_inplane=+0.447 GPa  E/atom=-7.31200 eV
+  phonons[ft] supercell 888 atoms, Hessian+bands 621 s; Gamma acoustic before ASR [-0.0106 -0.0106 -0.0008] -> after [-0.0106 -0.0106 -0.    ] THz; lowest Gamma optical [-0.     0.     0.858] THz; min -0.0106, max 13.872 THz
+
+name                        theta  atoms  k steps  conv fol  slide    gap     minF    G-ASR  t_ph(s)
+MoS2_twist_m1_near60        21.79     42  3    31  True   0  0.000  3.133  -0.0000   0.0000      112
+MoS2_twist_m5_near60         6.01    546  1    68  True   0  0.000  2.842  -0.0146   0.0146      369
+MoS2_twist_m4_near60         7.34    366  1    61  True   0  0.000  2.909  -0.0000   0.0000      164
+MoS2_twist_m2_near60        13.17    114  2   107  True   2  0.423  3.101  -0.0000   0.0000      160
+MoS2_twist_m3_near60         9.43    222  2    59  True   0  0.000  3.006  -0.0106   0.0106      621
+
+Wrote phonon_comparisons/twisted_mos2_near60/results.csv

@@ -1,0 +1,15 @@
+cpu-bind=MASK - g002, task  0  0 [1944766]: mask 0x111111100040 set
+
+=== MoS2_twist_m1_near0: 42 atoms, a_m=8.45 A, theta=21.78678929826181, k=3 (378 supercell atoms), relax=positions
+  relax[ft] steps=33 conv=True fmax 1.746->0.0007 eV/A  max_disp=0.139 A  layer_slide=0.009 A  gap 2.830->3.133 A  stress_inplane=+0.435 GPa
+  phonons[ft] supercell 378 atoms, Hessian+bands 123 s; Gamma acoustic before ASR [-0.1687 -0.1684  0.0005] -> after [-0.1687 -0.1684 -0.    ] THz; lowest Gamma optical [-0.     0.     0.843] THz; min -0.1687, max 13.874 THz
+
+=== MoS2_twist_m1_near60: 42 atoms, a_m=8.45 A, theta=21.78678929826181, k=3 (378 supercell atoms), relax=positions
+  relax[ft] steps=33 conv=True fmax 1.748->0.0008 eV/A  max_disp=0.117 A  layer_slide=0.009 A  gap 2.869->3.133 A  stress_inplane=+0.443 GPa
+  phonons[ft] supercell 378 atoms, Hessian+bands 122 s; Gamma acoustic before ASR [-0.0015 -0.0006  0.0003] -> after [-0. -0. -0.] THz; lowest Gamma optical [0.022 0.028 0.84 ] THz; min -0.0000, max 13.873 THz
+
+name                        theta  atoms  k steps  conv  slide    gap     minF    G-ASR  t_ph(s)
+MoS2_twist_m1_near0         21.79     42  3    33  True  0.009  3.133  -0.1687   0.1687      123
+MoS2_twist_m1_near60        21.79     42  3    33  True  0.009  3.133  -0.0000   0.0000      122
+
+Wrote /home/gowers/twist/scratch_smoke/rattle_out/results.csv

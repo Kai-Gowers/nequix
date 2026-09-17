@@ -193,3 +193,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Regenerable phonon band data (rebuilt by scripts/eval_twisted_phonons.py); plots/csv/vasp are tracked
+phonon_comparisons/*/bands/*.npz

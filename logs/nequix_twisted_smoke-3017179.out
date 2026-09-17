@@ -1,0 +1,20 @@
+cpu-bind=MASK - g002, task  0  0 [1937546]: mask 0x111111100040 set
+Tesla V100-SXM2-16GB, 16384 MiB
+=== CROSS-CHECK ===
+/home/gowers/twist/nequix/.venv/bin/python3: can't open file '/tmp/claude-82031717/-home-gowers-twist/2b4c42c3-72c5-481d-8c21-d2b4edf08bed/scratchpad/twisted_smoke/crosscheck.py': [Errno 2] No such file or directory
+=== TWISTED m1, m3 near0 ===
+
+=== MoS2_twist_m1_near0: 42 atoms, a_m=8.45 A, theta=21.78678929826181, k=3 (378 supercell atoms), relax=positions
+  relax[ft] steps=31 conv=True fmax 0.655->0.0006 eV/A  max_disp=0.137 A  gap 2.899->3.133 A  stress_inplane=+0.435 GPa
+  phonons[ft] supercell 378 atoms, Hessian+bands 124 s; Gamma acoustic before ASR [-0.1687 -0.1687 -0.0009] -> after [-0.1687 -0.1687 -0.    ] THz; lowest Gamma optical [-0.     0.     0.843] THz; min -0.1687, max 13.874 THz
+
+=== MoS2_twist_m3_near0: 222 atoms, a_m=19.42 A, theta=9.430007907896421, k=2 (888 supercell atoms), relax=positions
+  relax[ft] steps=51 conv=True fmax 0.656->0.0008 eV/A  max_disp=0.189 A  gap 2.899->3.019 A  stress_inplane=+0.428 GPa
+  phonons[ft] supercell 888 atoms, Hessian+bands 669 s; Gamma acoustic before ASR [-0.0026 -0.0023 -0.0008] -> after [-0.0026 -0.0024 -0.    ] THz; lowest Gamma optical [0.    0.    0.915] THz; min -0.0026, max 13.878 THz
+
+name                        theta  atoms  k steps  conv    gap     minF    G-ASR  t_ph(s)
+MoS2_twist_m1_near0         21.79     42  3    31  True  3.133  -0.1687   0.1687      124
+MoS2_twist_m3_near0          9.43    222  2    51  True  3.019  -0.0026   0.0026      669
+
+Wrote /tmp/claude-82031717/-home-gowers-twist/2b4c42c3-72c5-481d-8c21-d2b4edf08bed/scratchpad/twisted_smoke/out/results.csv
+0 MiB
