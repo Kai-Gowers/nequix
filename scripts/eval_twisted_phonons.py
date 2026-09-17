@@ -9,7 +9,8 @@ workflow/twisted/build_twisted_bilayer.py). Plots show the model's bands alone.
 
 Conventions
   * Structures are 60-deg hexagonal cells; phonopy uses the identity primitive matrix, in which
-    (2/3, 1/3, 0) is the K point (verified numerically) and (1/2, 0, 0) is M.
+    (2/3, 1/3, 0) is the K point (verified numerically) and (1/2, 0, 0) is M; the path is
+    chosen from the cell angle via compare_phonon_dispersion.hex_band_line_for_cell.
   * Phonopy supercell diag(k, k, 1); k defaults to twist.json's phonopy_k_recommended
     (ceil(25 A / a_moire), capped at 900 supercell atoms). k = 1 is Gamma-exact but off-Gamma
     approximate (force constants beyond half the moire cell are folded).
@@ -38,7 +39,7 @@ from ase.io import write as ase_write
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
-from compare_phonon_dispersion import HEX_BAND_LABELS, HEX_BAND_LINE, band_path_from_spec  # noqa: E402
+from compare_phonon_dispersion import HEX_BAND_LABELS, band_path_from_spec, hex_band_line_for_cell  # noqa: E402
 from eval_healthy2d_finetune import phonopy_atoms_to_ase, surface_gap  # noqa: E402
 
 PHONOPY_TARGET_LENGTH_A = 25.0
@@ -122,7 +123,7 @@ def phonopy_bands(atoms: Atoms, calc, k: int):
     masses = np.array(unitcell.masses)
     softest = qd["eigenvectors"][0][:, order[0]].real.reshape(-1, 3) / np.sqrt(masses)[:, None]
 
-    paths, _labels = band_path_from_spec(HEX_BAND_LINE, HEX_BAND_LABELS)
+    paths, _labels = band_path_from_spec(hex_band_line_for_cell(ph.primitive.cell), HEX_BAND_LABELS)
     ph.run_band_structure(paths, with_eigenvectors=False, is_band_connection=False)
     bs = ph.get_band_structure_dict()
     distances = np.concatenate(bs["distances"])

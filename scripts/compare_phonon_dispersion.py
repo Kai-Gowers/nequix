@@ -32,11 +32,28 @@ from ase import Atoms
 ROOT = Path(__file__).parent.parent
 WORKFLOW_ROOT = ROOT.parent / "workflow"
 
-# Generic hexagonal-lattice Gamma-K-M-Gamma path, matching the BAND/BAND_LABELS
-# convention used throughout workflow/'s own band.conf files. Used as a stand-in
-# q-path for --structure mode, where no band.conf exists.
-HEX_BAND_LINE = "0 0 0  0.6667 0.3333 0  0.5 0 0  0 0 0"
+# Generic hexagonal-lattice Gamma-K-M-Gamma paths. Fractional coordinates of K depend on
+# the in-plane angle of the cell the q-points are expressed in (phonopy's PRIMITIVE cell):
+# K = (1/3, 1/3, 0) in a 120° cell, K = (2/3, 1/3, 0) in a 60° cell, M = (1/2, 0, 0) in both.
+# workflow/ POSCARs are 60° but phonopy's PRIMITIVE_AXES=AUTO standardizes them to 120°
+# (band.conf uses the 120° line); the twisted structures use primitive_matrix=None and stay
+# 60°. Always pass ph.primitive.cell to hex_band_line_for_cell(). Before 2026-09-17 the 60°
+# line was used for the 120° primitive cells, mislabelling "K" on every workflow plot.
+HEX120_BAND_LINE = "0 0 0  0.3333 0.3333 0  0.5 0 0  0 0 0"
+HEX60_BAND_LINE = "0 0 0  0.6667 0.3333 0  0.5 0 0  0 0 0"
 HEX_BAND_LABELS = "Γ K M Γ"
+
+
+def hex_band_line_for_cell(cell) -> str:
+    """Pick the Γ-K-M-Γ BAND line matching the in-plane angle of a hexagonal cell."""
+    cell = np.asarray(cell)
+    cos = cell[0] @ cell[1] / (np.linalg.norm(cell[0]) * np.linalg.norm(cell[1]))
+    angle = np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))
+    if abs(angle - 120.0) < 1.0:
+        return HEX120_BAND_LINE
+    if abs(angle - 60.0) < 1.0:
+        return HEX60_BAND_LINE
+    raise ValueError(f"in-plane cell angle {angle:.2f}° is neither 60° nor 120°; not a hexagonal cell")
 
 
 def phonopy_atoms_to_ase(patoms) -> Atoms:
@@ -101,7 +118,7 @@ def build_structure_only_phonopy(material: str, supercell: str):
     unitcell = read_vasp(str(structure_path))
     supercell_matrix = np.diag([int(x) for x in supercell.split()])
     ph = Phonopy(unitcell, supercell_matrix=supercell_matrix, primitive_matrix="auto")
-    paths, labels = band_path_from_spec(HEX_BAND_LINE, HEX_BAND_LABELS)
+    paths, labels = band_path_from_spec(hex_band_line_for_cell(ph.primitive.cell), HEX_BAND_LABELS)
     return ph, paths, labels
 
 

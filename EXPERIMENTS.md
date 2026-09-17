@@ -70,6 +70,14 @@ The same split is referred to by three names depending on where you are:
 
 ## Conventions for new experiments
 
+- **Band path (fixed 2026-09-17):** DFT `band.yaml` q-points live in phonopy's 120° standardized primitive cell, where
+  K = (1/3, 1/3, 0). Until 2026-09-17 every `band.conf` and `compare_phonon_dispersion.HEX_BAND_LINE` used the 60°-cell
+  value (2/3, 1/3, 0), so all `phonon_comparisons/*` plots and RMSEs dated before then are on a Γ–(2/3 Γ→M')–M–Γ path
+  with a mislabelled "K" tick. DFT-vs-model RMSEs were computed on identical q-lists, so they remain valid as
+  comparisons but are not on the true Γ–K–M–Γ path. `workflow/FINAL_RESULTS*/*/band.yaml` have been regenerated on the
+  correct path; evals re-run after this date pick the new q-list up automatically. Use
+  `hex_band_line_for_cell(ph.primitive.cell)` for any new q-path (twisted 60° cells keep (2/3, 1/3, 0)).
+
 **Geometry mode of an eval.** Unless the eval dir name says `template_relax*`, every phonon eval is
 **fixed-geometry**: the model Hessian is evaluated at the DFT-relaxed `FINAL_RESULTS_HEALTHY` structure
 (a Hessian-accuracy benchmark, not a deployment test). `template_relaxpos` / `template_relaxcell` evals
