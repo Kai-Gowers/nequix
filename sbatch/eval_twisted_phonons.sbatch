@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name=nequix_twisted
+#SBATCH --output=logs/%x-%j.out
+#SBATCH --partition=short
+#SBATCH --time=06:00:00
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=48G
+
+cd "$SLURM_SUBMIT_DIR"
+
+# Usage: sbatch --job-name=<experiment> sbatch/eval_twisted_phonons.sbatch <model.nqx> <output-dir> <structure-dir> [<structure-dir> ...]
+# Model-only twisted-bilayer phonons (relax positions with the model, analytical Hessian, Gamma-K-M-Gamma).
+# Structures come from workflow/twisted/build_twisted_bilayer.py. Put the largest supercell last.
+# Extra options (e.g. --baseline-model nequix-omat-1, --supercell-k 1, --relax none) via TWISTED_EXTRA_ARGS.
+#
+#   sbatch --job-name=nequix_twisted_mos2_near0 sbatch/eval_twisted_phonons.sbatch \
+#     checkpoints/nequix-healthy-2d-pft-v4-tmd-omat.nqx phonon_comparisons/twisted_mos2_near0 \
+#     ../workflow/twisted/structures/MoS2_twist_m{1,5,4,2,3}_near0
+MODEL="${1:?Usage: sbatch eval_twisted_phonons.sbatch <model.nqx> <output-dir> <structure-dir>...}"
+OUTPUT_DIR="${2:?output-dir required}"
+shift 2
+[ $# -ge 1 ] || { echo "at least one structure dir required" >&2; exit 2; }
+
+uv run python -u scripts/eval_twisted_phonons.py \
+  --model "$MODEL" \
+  --output-dir "$OUTPUT_DIR" \
+  --structures "$@" \
+  ${TWISTED_EXTRA_ARGS:-}
