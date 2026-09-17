@@ -114,8 +114,13 @@ def phonopy_bands(atoms: Atoms, calc, k: int):
     ph.run_qpoints([[0, 0, 0]])
     gamma_before = np.sort(ph.get_qpoints_dict()["frequencies"][0])
     ph.symmetrize_force_constants()
-    ph.run_qpoints([[0, 0, 0]])
-    gamma_after = np.sort(ph.get_qpoints_dict()["frequencies"][0])
+    ph.run_qpoints([[0, 0, 0]], with_eigenvectors=True)
+    qd = ph.get_qpoints_dict()
+    order = np.argsort(qd["frequencies"][0])
+    gamma_after = qd["frequencies"][0][order]
+    # phonopy eigenvectors are mass-weighted; convert the softest mode to a real displacement pattern
+    masses = np.array(unitcell.masses)
+    softest = qd["eigenvectors"][0][:, order[0]].real.reshape(-1, 3) / np.sqrt(masses)[:, None]
 
     paths, _labels = band_path_from_spec(HEX_BAND_LINE, HEX_BAND_LABELS)
     ph.run_band_structure(paths, with_eigenvectors=False, is_band_connection=False)
@@ -124,7 +129,14 @@ def phonopy_bands(atoms: Atoms, calc, k: int):
     freqs = np.concatenate(bs["frequencies"], axis=0)
     edges = np.cumsum([0] + [len(d) for d in bs["distances"]]) - 1
     edges[0] = 0
-    return distances, freqs, edges, gamma_before, gamma_after, len(supercell)
+    return distances, freqs, edges, gamma_before, gamma_after, len(supercell), softest
+
+
+def displace_along_mode(atoms: Atoms, pattern: np.ndarray, amplitude: float) -> Atoms:
+    """Displace atoms along a (real) mode pattern so the largest atomic displacement is `amplitude` A."""
+    out = atoms.copy()
+    out.positions += pattern * (amplitude / np.linalg.norm(pattern, axis=1).max())
+    return out
 
 
 def plot_bands(distances, freqs, edges, labels, title, out_path, extra=None):
@@ -155,7 +167,9 @@ def plot_bands(distances, freqs, edges, labels, title, out_path, extra=None):
 
 
 def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str, fmax: float, max_steps: int,
-                       k_override: int | None, plots: bool, rattle: float = 0.0) -> dict:
+                       k_override: int | None, plots: bool, rattle: float = 0.0, max_follow: int = 3,
+                       follow_threshold: float = 0.02, follow_amplitude: float = 0.3,
+                       follow_fmax_factor: float = 0.2) -> dict:
     name = struct_dir.name
     atoms = ase_read(str(struct_dir / "POSCAR"), format="vasp")
     atoms.pbc = True
@@ -182,18 +196,40 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
     bands_for_plot = {}
     for tag, calc in calcs.items():
         t0 = time.perf_counter()
+        t_relax = 0.0
+        n_follow = 0
+        start = atoms
+        while True:
+            if relax == "positions":
+                tr = time.perf_counter()
+                # follow rounds: tighter fmax -- the sliding direction is so flat (~0.05 THz) that 1e-3 eV/A
+                # cannot resolve its minimum
+                relaxed, info = relax_positions(start, calc, fmax if n_follow == 0 else fmax * follow_fmax_factor,
+                                                max_steps, rattle=rattle if n_follow == 0 else 0.0)
+                t_relax += time.perf_counter() - tr
+                info["layer_slide_A"] = layer_slide(atoms.get_positions(), relaxed.get_positions(), atoms.positions[:, 2])
+                info["max_disp_A"] = float(np.linalg.norm(relaxed.get_positions() - atoms.get_positions(), axis=1).max())
+                print(f"  relax[{tag}] steps={info['steps']} conv={info['converged']} fmax {info['fmax0']:.3f}->"
+                      f"{info['fmax_final']:.4f} eV/A  max_disp={info['max_disp_A']:.3f} A  layer_slide={info['layer_slide_A']:.3f} A"
+                      f"  gap {info['gap0_A']:.3f}->{info['gap_A']:.3f} A  stress_inplane={info['stress_inplane_GPa']:+.3f} GPa"
+                      f"  E/atom={info['energy_per_atom_eV']:.5f} eV")
+            else:
+                relaxed, info = start.copy(), {}
+            t1 = time.perf_counter()
+            distances, freqs, edges, g_before, g_after, n_super, softest = phonopy_bands(relaxed, calc, k)
+            t2 = time.perf_counter()
+            n_imag = int((g_after < -follow_threshold).sum())
+            if relax != "positions" or n_imag == 0 or n_follow >= max_follow:
+                break
+            # symmetry-protected saddle (e.g. rigid interlayer sliding): kick along the softest Gamma mode and re-relax
+            n_follow += 1
+            print(f"  follow[{tag}] {n_imag} imaginary Gamma mode(s) below {-follow_threshold} THz (softest "
+                  f"{g_after[0]:.4f}); displacing {follow_amplitude} A along it and re-relaxing (round {n_follow})")
+            start = displace_along_mode(relaxed, softest, follow_amplitude)
         if relax == "positions":
-            relaxed, info = relax_positions(atoms, calc, fmax, max_steps, rattle=rattle)
             (out_dir / "relaxed_structures").mkdir(parents=True, exist_ok=True)
             ase_write(str(out_dir / "relaxed_structures" / f"{name}_{tag}.vasp"), relaxed, format="vasp", direct=True)
-            print(f"  relax[{tag}] steps={info['steps']} conv={info['converged']} fmax {info['fmax0']:.3f}->"
-                  f"{info['fmax_final']:.4f} eV/A  max_disp={info['max_disp_A']:.3f} A  layer_slide={info['layer_slide_A']:.3f} A  gap {info['gap0_A']:.3f}->"
-                  f"{info['gap_A']:.3f} A  stress_inplane={info['stress_inplane_GPa']:+.3f} GPa")
-        else:
-            relaxed, info = atoms.copy(), {}
-        t1 = time.perf_counter()
-        distances, freqs, edges, g_before, g_after, n_super = phonopy_bands(relaxed, calc, k)
-        t2 = time.perf_counter()
+        info["n_follow_rounds"] = n_follow
         n_ac = 3
         print(f"  phonons[{tag}] supercell {n_super} atoms, Hessian+bands {t2 - t1:.0f} s; "
               f"Gamma acoustic before ASR {np.round(g_before[:n_ac], 4)} -> after {np.round(g_after[:n_ac], 4)} THz; "
@@ -208,7 +244,7 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
             f"{tag}_min_freq_THz": float(freqs.min()),
             f"{tag}_max_freq_THz": float(freqs.max()),
             f"{tag}_n_imag_below_m0p05": int((freqs < -0.05).sum()),
-            f"{tag}_t_relax_s": round(t1 - t0, 1),
+            f"{tag}_t_relax_s": round(t_relax, 1),
             f"{tag}_t_phonons_s": round(t2 - t1, 1),
         })
         (out_dir / "bands").mkdir(parents=True, exist_ok=True)
@@ -244,6 +280,13 @@ def main() -> None:
                         help="Gaussian rattle (A) applied before relaxation to break the as-built point symmetry so "
                              "symmetry-protected saddles (rigid interlayer sliding) can relax (default 0 = off)")
     parser.add_argument("--no-plots", action="store_true")
+    parser.add_argument("--max-follow", type=int, default=3,
+                        help="Max mode-following rounds: if Gamma has non-acoustic imaginary modes after the ASR, "
+                             "displace along the softest one and re-relax (default 3; 0 = off)")
+    parser.add_argument("--follow-threshold", type=float, default=0.02, help="THz; modes below -threshold trigger following")
+    parser.add_argument("--follow-fmax-factor", type=float, default=0.2,
+                        help="fmax multiplier for follow-round relaxations (default 0.2 -> 2e-4 eV/A)")
+    parser.add_argument("--follow-amplitude", type=float, default=0.3, help="A; max atomic displacement of the kick")
     args = parser.parse_args()
 
     from nequix.calculator import NequixCalculator
@@ -260,7 +303,9 @@ def main() -> None:
     rows = []
     for struct_dir in args.structures:
         row = evaluate_structure(struct_dir, calcs, args.output_dir, args.relax, args.fmax, args.max_steps,
-                                 args.supercell_k, not args.no_plots, rattle=args.rattle)
+                                 args.supercell_k, not args.no_plots, rattle=args.rattle, max_follow=args.max_follow,
+                                 follow_threshold=args.follow_threshold, follow_amplitude=args.follow_amplitude,
+                                 follow_fmax_factor=args.follow_fmax_factor)
         rows.append(row)
         keys = sorted({kk for r in rows for kk in r}, key=lambda s: (s not in row, s))
         keys = list(row.keys()) + [kk for kk in keys if kk not in row]
@@ -269,11 +314,11 @@ def main() -> None:
             w.writeheader()
             w.writerows(rows)
 
-    print(f"\n{'name':<26}{'theta':>7}{'atoms':>7}{'k':>3}{'steps':>6}{'conv':>6}{'slide':>7}{'gap':>7}{'minF':>9}{'G-ASR':>9}{'t_ph(s)':>9}")
+    print(f"\n{'name':<26}{'theta':>7}{'atoms':>7}{'k':>3}{'steps':>6}{'conv':>6}{'fol':>4}{'slide':>7}{'gap':>7}{'minF':>9}{'G-ASR':>9}{'t_ph(s)':>9}")
     for r in rows:
         theta = f"{r['theta_deg']:.2f}" if r["theta_deg"] != "" else "-"
         print(f"{r['name']:<26}{theta:>7}{r['n_atoms']:>7}{r['k']:>3}{str(r.get('ft_steps', '-')):>6}"
-              f"{str(r.get('ft_converged', '-')):>6}{r.get('ft_layer_slide_A', float('nan')):>7.3f}{r.get('ft_gap_A', float('nan')):>7.3f}"
+              f"{str(r.get('ft_converged', '-')):>6}{str(r.get('ft_n_follow_rounds', '-')):>4}{r.get('ft_layer_slide_A', float('nan')):>7.3f}{r.get('ft_gap_A', float('nan')):>7.3f}"
               f"{r['ft_min_freq_THz']:>9.4f}{r['ft_gamma_acoustic_after_asr_max_abs_THz']:>9.4f}{r['ft_t_phonons_s']:>9.0f}")
     print(f"\nWrote {csv_path}")
 
