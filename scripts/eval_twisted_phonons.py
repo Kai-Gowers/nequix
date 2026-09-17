@@ -53,18 +53,32 @@ def default_k(atoms: Atoms) -> int:
     return k
 
 
-def relax_positions(atoms: Atoms, calc, fmax: float, max_steps: int):
+def layer_slide(pos0: np.ndarray, pos1: np.ndarray, z0: np.ndarray) -> float:
+    """Rigid in-plane displacement of the top layer relative to the bottom layer (A): difference of the
+    two layers' mean in-plane displacements. Detects interlayer sliding that a symmetric start hides."""
+    top = z0 > z0.mean()
+    d = pos1[:, :2] - pos0[:, :2]
+    return float(np.linalg.norm(d[top].mean(axis=0) - d[~top].mean(axis=0)))
+
+
+def relax_positions(atoms: Atoms, calc, fmax: float, max_steps: int, rattle: float = 0.0, seed: int = 0):
     """Positions-only BFGS relaxation (cell fixed: the moire lattice is set by commensurability).
-    No FixSymmetry -- the moire cell has little symmetry and the model may lower it further."""
+    No FixSymmetry -- the moire cell has little symmetry and the model may lower it further.
+    `rattle` (A, Gaussian std) breaks the exact point symmetry of the as-built cell so the optimizer can
+    leave a symmetry-protected saddle (e.g. rigid interlayer sliding, whose force vanishes by symmetry at
+    the rotation-centre registry)."""
     from ase.optimize import BFGS
     from ase.units import GPa
 
     atoms = atoms.copy()
     atoms.pbc = True
-    atoms.calc = calc
     pos0 = atoms.get_positions().copy()
+    z0 = pos0[:, 2].copy()
+    if rattle > 0:
+        atoms.rattle(stdev=rattle, seed=seed)
+    atoms.calc = calc
     forces0 = atoms.get_forces()
-    info = {"fmax0": float(np.linalg.norm(forces0, axis=1).max()), "gap0_A": surface_gap(atoms)}
+    info = {"rattle_A": rattle, "fmax0": float(np.linalg.norm(forces0, axis=1).max()), "gap0_A": surface_gap(atoms)}
     opt = BFGS(atoms, logfile=None, maxstep=0.1)
     converged = bool(opt.run(fmax=fmax, steps=max_steps))
     forces = atoms.get_forces()
@@ -76,6 +90,7 @@ def relax_positions(atoms: Atoms, calc, fmax: float, max_steps: int):
             "fmax_final": float(np.linalg.norm(forces, axis=1).max()),
             "stress_inplane_GPa": float(np.mean(stress[:2]) / GPa),
             "max_disp_A": float(np.linalg.norm(atoms.get_positions() - pos0, axis=1).max()),
+            "layer_slide_A": layer_slide(pos0, atoms.get_positions(), z0),
             "gap_A": surface_gap(atoms),
             "energy_per_atom_eV": float(atoms.get_potential_energy() / len(atoms)),
         }
@@ -140,7 +155,7 @@ def plot_bands(distances, freqs, edges, labels, title, out_path, extra=None):
 
 
 def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str, fmax: float, max_steps: int,
-                       k_override: int | None, plots: bool) -> dict:
+                       k_override: int | None, plots: bool, rattle: float = 0.0) -> dict:
     name = struct_dir.name
     atoms = ase_read(str(struct_dir / "POSCAR"), format="vasp")
     atoms.pbc = True
@@ -159,6 +174,7 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
         "a_moire_A": float(np.linalg.norm(atoms.cell[0])),
         "k": k,
         "relax_mode": relax,
+        "rattle_A": rattle,
     }
     print(f"\n=== {name}: {len(atoms)} atoms, a_m={row['a_moire_A']:.2f} A, theta={row['theta_deg']}, k={k} "
           f"({len(atoms) * k * k} supercell atoms), relax={relax}")
@@ -167,11 +183,11 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
     for tag, calc in calcs.items():
         t0 = time.perf_counter()
         if relax == "positions":
-            relaxed, info = relax_positions(atoms, calc, fmax, max_steps)
+            relaxed, info = relax_positions(atoms, calc, fmax, max_steps, rattle=rattle)
             (out_dir / "relaxed_structures").mkdir(parents=True, exist_ok=True)
             ase_write(str(out_dir / "relaxed_structures" / f"{name}_{tag}.vasp"), relaxed, format="vasp", direct=True)
             print(f"  relax[{tag}] steps={info['steps']} conv={info['converged']} fmax {info['fmax0']:.3f}->"
-                  f"{info['fmax_final']:.4f} eV/A  max_disp={info['max_disp_A']:.3f} A  gap {info['gap0_A']:.3f}->"
+                  f"{info['fmax_final']:.4f} eV/A  max_disp={info['max_disp_A']:.3f} A  layer_slide={info['layer_slide_A']:.3f} A  gap {info['gap0_A']:.3f}->"
                   f"{info['gap_A']:.3f} A  stress_inplane={info['stress_inplane_GPa']:+.3f} GPa")
         else:
             relaxed, info = atoms.copy(), {}
@@ -224,6 +240,9 @@ def main() -> None:
     parser.add_argument("--fmax", type=float, default=1e-3, help="BFGS force threshold, eV/A (default 1e-3)")
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--supercell-k", type=int, default=None, help="Override phonopy k for all structures")
+    parser.add_argument("--rattle", type=float, default=0.0,
+                        help="Gaussian rattle (A) applied before relaxation to break the as-built point symmetry so "
+                             "symmetry-protected saddles (rigid interlayer sliding) can relax (default 0 = off)")
     parser.add_argument("--no-plots", action="store_true")
     args = parser.parse_args()
 
@@ -241,7 +260,7 @@ def main() -> None:
     rows = []
     for struct_dir in args.structures:
         row = evaluate_structure(struct_dir, calcs, args.output_dir, args.relax, args.fmax, args.max_steps,
-                                 args.supercell_k, not args.no_plots)
+                                 args.supercell_k, not args.no_plots, rattle=args.rattle)
         rows.append(row)
         keys = sorted({kk for r in rows for kk in r}, key=lambda s: (s not in row, s))
         keys = list(row.keys()) + [kk for kk in keys if kk not in row]
@@ -250,11 +269,11 @@ def main() -> None:
             w.writeheader()
             w.writerows(rows)
 
-    print(f"\n{'name':<26}{'theta':>7}{'atoms':>7}{'k':>3}{'steps':>6}{'conv':>6}{'gap':>7}{'minF':>9}{'G-ASR':>9}{'t_ph(s)':>9}")
+    print(f"\n{'name':<26}{'theta':>7}{'atoms':>7}{'k':>3}{'steps':>6}{'conv':>6}{'slide':>7}{'gap':>7}{'minF':>9}{'G-ASR':>9}{'t_ph(s)':>9}")
     for r in rows:
         theta = f"{r['theta_deg']:.2f}" if r["theta_deg"] != "" else "-"
         print(f"{r['name']:<26}{theta:>7}{r['n_atoms']:>7}{r['k']:>3}{str(r.get('ft_steps', '-')):>6}"
-              f"{str(r.get('ft_converged', '-')):>6}{r.get('ft_gap_A', float('nan')):>7.3f}"
+              f"{str(r.get('ft_converged', '-')):>6}{r.get('ft_layer_slide_A', float('nan')):>7.3f}{r.get('ft_gap_A', float('nan')):>7.3f}"
               f"{r['ft_min_freq_THz']:>9.4f}{r['ft_gamma_acoustic_after_asr_max_abs_THz']:>9.4f}{r['ft_t_phonons_s']:>9.0f}")
     print(f"\nWrote {csv_path}")
 
