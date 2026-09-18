@@ -129,3 +129,30 @@ recipe as default.
 Adding D3 is consistently but negligibly better (~1%). **No** — omat-1's residual error on these TMDs is
 not dominated by the missing vdW treatment (OMat24 is PBE without D3); the 0.155 THz residual is
 elsewhere, and only the fine-tune (0.155 → 0.051) removes it.
+
+### Stage 1 (2026-09-18): does the bare-PBE model reproduce bare PBE *before* D3 is added back?
+
+Asked for by the PI ("train without D3 first, make sure the bare PBE model is correct, then add D3").
+`--reference bare --add-d3 none`, job 3019406 → `phonon_comparisons/v4_tmd_only_omat_bared3_stage1_bare_eval/`.
+Reference = `FC_ref - FC_D3` on the band.yaml q-list, i.e. the bare-PBE curvature **at the PBE+D3-relaxed
+geometry** (not a bare-PBE minimum: |F_D3| there is 0.10–0.17 eV/Å). Baseline = zero-shot `nequix-omat-1`,
+itself a PBE-without-D3 model. Fixed geometry throughout.
+
+| group | n | bared3 ft (no D3) vs bare ref | omat-1 vs bare ref | ft wins | stage 2: bared3 ft + D3 vs PBE+D3 ref |
+|---|---|---|---|---|---|
+| all 48 | 48 | 0.0527 | 0.1670 | 48/48 | 0.0525 |
+| train | 39 | 0.0504 | 0.1691 | 39/39 | 0.0502 |
+| val | 3 | 0.0566 | 0.1770 | 3/3 | 0.0565 |
+| held-out | 6 | 0.0654 | 0.1482 | 6/6 | 0.0653 |
+| worst held-out | | 0.112 (MoSe2_WSe2_2H) | | | 0.111 |
+
+Per material, stage 1 and stage 2 agree to −0.001..+0.002 THz. That is expected: `H_model + FC_D3` vs `FC_ref`
+and `H_model` vs `FC_ref - FC_D3` are the same difference in force-constant space, so once the D3 term is added
+*exactly* (not learned) the two stages are one test. The staged plan therefore closes without further training.
+
+Diagnostics: bare and PBE+D3 references differ by 0.007–0.018 THz RMSE (most for the six monolayers). In 23/48
+bare references the ZA branch dips slightly imaginary within |q| ≤ 0.04 of Γ (worst MoSe2 −0.065 THz, WS2
+−0.059, both hiphive-corrected references): `FC_D3` from plain 4x4x1 finite differences is not exactly
+rotationally invariant, so subtracting it undoes a little of the rotational-sum-rule correction. This is an
+artifact of the reference, not physics; the fine-tuned model does not reproduce it (min ≈ −0.001 THz there).
+`reference_bare/<mat>.npz` (q-list, bare and PBE+D3 frequencies) is regenerable and gitignored.
