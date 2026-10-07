@@ -1,0 +1,11 @@
+# Nequix dataset (bare PBE from FINAL_RESULTS_BARE_PBE_SUBTRACT, real unit-cell stress) — 6 materials
+# Source split: /home/gowers/twist/workflow/nequix_datasets/v4_tmd_only/holdout
+# Generated: uv run python explicit_dispersion/build_bare_subtract_dataset.py
+# Count: 6
+
+MoSe2_WSe2_2H
+MoSe2_WSe2_3R
+MoTe2_WS2_2H
+MoTe2_WS2_3R
+WS2_WSe2_2H
+WS2_WSe2_3R
