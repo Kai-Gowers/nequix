@@ -1,4 +1,4 @@
-# Nequix dataset (bare PBE from FINAL_RESULTS_BARE_PBE_SUBTRACT, real unit-cell stress) — 3 materials
+# Nequix dataset (bare PBE from FINAL_RESULTS_BARE_PBE_SUBTRACT, real unit-cell stress, forces = -F_D3(eq)) — 3 materials
 # Source split: /home/gowers/twist/workflow/nequix_datasets/v4_tmd_only/val
 # Generated: uv run python explicit_dispersion/build_bare_subtract_dataset.py
 # Count: 3

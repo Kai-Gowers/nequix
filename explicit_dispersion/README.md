@@ -161,12 +161,13 @@ artifact of the reference, not physics; the fine-tuned model does not reproduce 
 
 `build_bare_subtract_dataset.py` → `data/v4_tmd_only_bare_subtract/` (same 39/3/6 split). Hessians are the
 `FORCE_CONSTANTS` of `workflow/FINAL_RESULTS_BARE_PBE_SUBTRACT/` (the canonical bare-PBE set since 2026-10-06:
-FORCE_SETS-level D3 subtraction with the equilibrium D3 force removed, hiphive refit on 25/48), forces = 0 (bare
-equilibrium by construction), and — new — **stress = the real bare unit-cell stress** `σ_OUTCAR(ISIF=2, 21x21x1) − σ_D3`
+FORCE_SETS-level D3 subtraction with the equilibrium D3 force removed, hiphive refit on 25/48), **forces = −F_D3(eq)** (the true bare force at the PBE+D3 geometry, 0.10–0.17 eV/Å; the
+eq-force removal inside the subtraction pipeline is only phonopy's residual-force handling and does not make the
+geometry a bare stationary point — a first build with forces = 0 was cancelled), and — new — **stress = the real bare unit-cell stress** `σ_OUTCAR(ISIF=2, 21x21x1) − σ_D3`
 as a (3,3) eV/Å³ tensor. Every earlier fine-tune trained with `stress_weight = 5` against stress = 0 (or −σ_D3), i.e.
 toward a false zero: the true bare in-plane stress is −0.15…−0.9 GPa on monolayers and −0.2…−2.3 GPa on bilayers
 (D3 alone is ≈ +0.9 / +2.1 GPa), and it is near-zero in PBE+D3 only for the cells whose `a` was ISIF=4-refined.
 `summary.csv` lists σ_bare / σ_PBE+D3 / σ_D3 per material. Config `configs/nequix-healthy-2d-pft-v4-tmd-omat-baresub.yml`
-(= the bared3 config with new paths; energy_weight still 0). Train 3115178, eval 3115179 (ft + cached FC_D3 vs the
+(= the bared3 config with new paths; energy_weight still 0). Train 3115218, eval 3115219 (ft + cached FC_D3 vs the
 implicit omat ft on the PBE+D3 reference, fixed geometry). The stress effect only shows in a cell-relaxation eval,
 which `eval_healthy2d_finetune.py --relax cell` does not yet support with D3 added back — follow-up.

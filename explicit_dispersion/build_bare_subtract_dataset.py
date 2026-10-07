@@ -5,8 +5,11 @@ Differences from strip_d3_dataset.py (the 2026-09-15 explicit-dispersion set):
   * hessian = FORCE_CONSTANTS of FINAL_RESULTS_BARE_PBE_SUBTRACT/<mat>/ (FORCE_SETS-level D3 subtraction
     with the equilibrium D3 force removed, hiphive rotational-sum-rule refit on 25/48) instead of
     FC_ref - FC_D3 at the force-constant level.
-  * forces = 0: the eq-force removal in the subtraction pipeline makes the PBE+D3 geometry the
-    equilibrium of the bare targets by construction.
+  * forces = -F_D3(equilibrium) on the supercell, i.e. the TRUE bare-PBE force at the PBE+D3 geometry
+    (0.10-0.17 eV/A per atom, mostly interlayer z). The eq-force removal inside the subtraction pipeline is
+    only phonopy's residual-force handling for the finite differences; it does not make the geometry a bare
+    stationary point, and writing forces = 0 here (first build, 2026-10-07, jobs 3115178/9 cancelled) would
+    have put the combined model+D3 minimum away from the DFT geometry.
   * stress = the REAL bare-PBE unit-cell stress, sigma_PBE+D3(relaxation OUTCAR, ISIF=2) - sigma_D3,
     as a (3,3) eV/A^3 tensor in ASE sign convention. Every earlier fine-tune wrote stress = 0 (or
     -sigma_D3) although the cells were never relaxed, so the model was trained toward zero stress at
@@ -88,10 +91,11 @@ def process_material(material: str, db) -> dict:
 
     uc = unitcell_bare_efs(material, mdir / "POSCAR")
     scale = n / uc["n_uc"]
+    f_d3_eq = np.asarray(d3_efs(atoms)["forces"])  # D3 force on the undisplaced supercell
     atoms.calc = SinglePointCalculator(
         atoms,
         energy=float(uc["energy_bare"] * scale),
-        forces=np.zeros((n, 3), dtype=np.float32),
+        forces=(-f_d3_eq).astype(np.float32),
         stress=uc["stress_bare"].astype(np.float32),
     )
     atoms.info["hessian"] = to_training_layout(fc).astype(np.float32)
@@ -102,6 +106,7 @@ def process_material(material: str, db) -> dict:
     return {
         "material": material, "n_atoms_supercell": n, "n_atoms_unitcell": uc["n_uc"],
         "fc_max": float(np.abs(fc).max()), "asr": asr_residual(fc),
+        "F_d3_eq_max_eV_per_A": float(np.abs(f_d3_eq).max()),
         "energy_bare_uc_eV": uc["energy_bare"],
         "stress_bare_xx_GPa": float(s[0, 0]), "stress_bare_yy_GPa": float(s[1, 1]), "stress_bare_zz_GPa": float(s[2, 2]),
         "stress_bare_offdiag_max_GPa": float(max(abs(s[0, 1]), abs(s[0, 2]), abs(s[1, 2]))),
@@ -131,11 +136,11 @@ def main() -> None:
                 r = process_material(mat, db)
                 r["split"] = split
                 rows.append(r)
-                print(f"  ok {mat:20s} n_sc {r['n_atoms_supercell']:3d}  |FC|max {r['fc_max']:6.2f}  ASR {r['asr']:.1e}"
+                print(f"  ok {mat:20s} n_sc {r['n_atoms_supercell']:3d}  |FC|max {r['fc_max']:6.2f}  ASR {r['asr']:.1e}  |F_D3eq|max {r['F_d3_eq_max_eV_per_A']:.3f}"
                       f"  sigma_bare xx/zz {r['stress_bare_xx_GPa']:+.3f}/{r['stress_bare_zz_GPa']:+.3f} GPa"
                       f"  (PBE+D3 xx {r['stress_pbe_d3_xx_GPa']:+.3f}, D3 xx {r['stress_d3_xx_GPa']:+.3f})", flush=True)
         with open(out.parent / "materials.txt", "w") as f:
-            f.write(f"# Nequix dataset (bare PBE from FINAL_RESULTS_BARE_PBE_SUBTRACT, real unit-cell stress) — {len(materials)} materials\n")
+            f.write(f"# Nequix dataset (bare PBE from FINAL_RESULTS_BARE_PBE_SUBTRACT, real unit-cell stress, forces = -F_D3(eq)) — {len(materials)} materials\n")
             f.write(f"# Source split: {split_root / split}\n")
             f.write(f"# Generated: uv run python {' '.join(sys.argv)}\n")
             f.write(f"# Count: {len(materials)}\n\n")
