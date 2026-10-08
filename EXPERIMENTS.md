@@ -91,6 +91,7 @@ The same split is referred to by three names depending on where you are:
 start from `workflow/template_structures/<mat>/POSCAR` (the workflow's pre-relaxation template) and let
 each model relax positions (or positions + in-plane cell) before the Hessian — say which kind a number is.
 
+00. **Default deployed model is `-pft-v4-tmd-omat-baresub-e20` + explicit D3** (user decision 2026-10-08 after the template-relax evals 3117363/3117364): always wrap it in `explicit_dispersion/d3.NequixD3Calculator` / `--add-d3 finetuned`. The implicit `-pft-v4-tmd-omat` (default 2026-09-15 → 2026-10-08) remains the no-D3 baseline in evals.
 0. **Default base model is `nequix-omat-1`** (`finetune_from: models/nequix-omat-1.nqx`), decided
    2026-09-15 after the base-model ablation above. Everything before that date used `nequix-mp-1`;
    only compare a new run against an mp-1 run if that is the explicit point of the experiment.
