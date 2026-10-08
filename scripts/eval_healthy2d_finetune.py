@@ -207,6 +207,7 @@ def evaluate_material(
     relax_mode: str = "none",
     start_dir: Path = None,
     relaxed_dir: Path = None,
+    add_d3: str = "none",
 ) -> dict:
     ph, q_list, dft_freqs = load_dft_reference(material)
     supercell_ase = phonopy_atoms_to_ase(ph.supercell)
@@ -220,7 +221,19 @@ def evaluate_material(
     else:
         calc_base = NequixCalculator(model_name=baseline_model, backend="jax", use_kernel=False)
 
-    extra = {}
+    # Explicit D3 hook for models trained on bare-PBE targets (explicit_dispersion/): the wrapper adds
+    # the VASP-matched D3(BJ) energy/forces/stress during relaxation and the analytic D3 Hessian on top
+    # of the model Hessian at whatever geometry the relaxation ends at (so no cached FC_D3 is used).
+    if add_d3 != "none":
+        sys.path.insert(0, str(ROOT / "explicit_dispersion"))
+        from d3 import NequixD3Calculator  # noqa: E402
+
+        if add_d3 in ("finetuned", "both"):
+            calc_ft = NequixD3Calculator(calc_ft)
+        if add_d3 in ("baseline", "both"):
+            calc_base = NequixD3Calculator(calc_base)
+
+    extra = {"d3_added_to": add_d3}
     if relax_mode == "none":
         ph.force_constants = calc_ft.get_hessian(supercell_ase)
         ft_freqs = run_qpoints_frequencies(ph, q_list)
@@ -336,6 +349,13 @@ def main() -> None:
         help="Directory of <material>/POSCAR template starts for --relax positions|cell "
         "(default: workflow/template_structures, from scripts/generate_template_start_structures.py)",
     )
+    parser.add_argument(
+        "--add-d3",
+        choices=["none", "finetuned", "baseline", "both"],
+        default="none",
+        help="Wrap the named model(s) in explicit_dispersion.d3.NequixD3Calculator (bare-PBE models: "
+        "D3 forces/stress during relaxation + analytic D3 Hessian). Default none.",
+    )
     args = parser.parse_args()
 
     dataset_dir = WORKFLOW_ROOT / "nequix_datasets" / args.dataset_dir
@@ -358,6 +378,7 @@ def main() -> None:
                 material, group, args.finetuned_model, args.baseline_model, plot_dir,
                 relax_mode=args.relax, start_dir=Path(args.start_dir),
                 relaxed_dir=None if args.relax == "none" else output_dir / "relaxed_structures",
+                add_d3=args.add_d3,
             )
             rows.append(row)
             print(f"    RMSE ft={row['rmse_ft']:.4f}  base={row['rmse_base']:.4f}  THz")
