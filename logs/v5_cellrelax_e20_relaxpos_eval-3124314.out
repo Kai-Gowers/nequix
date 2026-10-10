@@ -1,0 +1,211 @@
+cpu-bind=MASK - g002, task  0  0 [1098046]: mask 0x222000888880 set
+[eval_cellrelax_reference] healthy2d: DFT reference for 16 cellrelax materials <- /home/gowers/twist/workflow/FINAL_RESULTS_CELLRELAX
+[1/48] MoS2 (train) ...
+    relax[ft] steps=0 conv=True fmax0=0.001 stress0=+0.22GPa da=+0.00% gap=0.000->0.000
+    relax[base] steps=2 conv=True fmax0=0.006 stress0=+0.15GPa da=+0.00% gap=0.000->0.000
+    RMSE ft=0.0516  base=0.0677  THz
+[2/48] MoS2_MoSe2_2H (train) ...
+    relax[ft] steps=15 conv=True fmax0=1.438 stress0=+0.29GPa da=+0.00% gap=2.977->2.970
+    relax[base] steps=14 conv=True fmax0=1.438 stress0=+0.01GPa da=+0.00% gap=2.977->2.969
+    RMSE ft=0.0358  base=0.0340  THz
+[3/48] MoS2_MoSe2_3R (train) ...
+    relax[ft] steps=14 conv=True fmax0=1.455 stress0=+0.09GPa da=+0.00% gap=2.977->2.947
+    relax[base] steps=14 conv=True fmax0=1.455 stress0=-0.20GPa da=+0.00% gap=2.977->2.945
+    RMSE ft=0.0562  base=0.0719  THz
+[4/48] MoS2_MoTe2_2H (train) ...
+    relax[ft] steps=16 conv=True fmax0=3.631 stress0=-2.10GPa da=+0.00% gap=3.073->3.029
+    relax[base] steps=16 conv=True fmax0=3.629 stress0=-2.44GPa da=+0.00% gap=3.073->3.033
+    RMSE ft=0.0498  base=0.0492  THz
+[5/48] MoS2_MoTe2_3R (train) ...
+    relax[ft] steps=16 conv=True fmax0=3.595 stress0=-1.98GPa da=-0.00% gap=3.073->3.004
+    relax[base] steps=16 conv=True fmax0=3.594 stress0=-2.33GPa da=-0.00% gap=3.073->3.008
+    RMSE ft=0.0612  base=0.0676  THz
+[6/48] MoS2_WS2_2H (train) ...
+    relax[ft] steps=12 conv=True fmax0=0.141 stress0=+0.66GPa da=-0.00% gap=2.925->2.932
+    relax[base] steps=13 conv=True fmax0=0.154 stress0=+0.51GPa da=-0.00% gap=2.925->2.937
+    RMSE ft=0.0474  base=0.0689  THz
+[7/48] MoS2_WS2_3R (train) ...
+    relax[ft] steps=14 conv=True fmax0=0.157 stress0=+0.67GPa da=+0.00% gap=2.925->2.902
+    relax[base] steps=14 conv=True fmax0=0.167 stress0=+0.51GPa da=+0.00% gap=2.925->2.906
+    RMSE ft=0.0259  base=0.0495  THz
+[8/48] MoS2_WSe2_2H (train) ...
+    relax[ft] steps=14 conv=True fmax0=1.705 stress0=-0.17GPa da=+0.00% gap=2.985->2.972
+    relax[base] steps=14 conv=True fmax0=1.711 stress0=-0.43GPa da=+0.00% gap=2.985->2.975
+    RMSE ft=0.0450  base=0.0375  THz
+[9/48] MoS2_WSe2_3R (val) ...
+    relax[ft] steps=14 conv=True fmax0=1.680 stress0=-0.08GPa da=+0.00% gap=2.985->2.945
+    relax[base] steps=14 conv=True fmax0=1.687 stress0=-0.36GPa da=+0.00% gap=2.985->2.947
+    RMSE ft=0.0701  base=0.0642  THz
+[10/48] MoS2_WTe2_2H (train) ...
+    relax[ft] steps=16 conv=True fmax0=4.061 stress0=-2.72GPa da=+0.00% gap=3.082->3.010
+    relax[base] steps=16 conv=True fmax0=4.059 stress0=-3.04GPa da=+0.00% gap=3.082->3.017
+    RMSE ft=0.0581  base=0.0628  THz
+[11/48] MoS2_WTe2_3R (train) ...
+    relax[ft] steps=16 conv=True fmax0=4.008 stress0=-2.54GPa da=-0.00% gap=3.082->2.979
+    relax[base] steps=16 conv=True fmax0=4.008 stress0=-2.87GPa da=-0.00% gap=3.082->2.986
+    RMSE ft=0.0670  base=0.0724  THz
+[12/48] MoS2_bilayer_2H (val) ...
+    relax[ft] steps=4 conv=True fmax0=0.025 stress0=+0.61GPa da=+0.00% gap=2.918->2.920
+    relax[base] steps=5 conv=True fmax0=0.036 stress0=+0.43GPa da=+0.00% gap=2.918->2.921
+    RMSE ft=0.0328  base=0.0358  THz
+[13/48] MoS2_bilayer_3R (train) ...
+    relax[ft] steps=12 conv=True fmax0=0.057 stress0=+0.58GPa da=-0.00% gap=2.918->2.894
+    relax[base] steps=12 conv=True fmax0=0.056 stress0=+0.39GPa da=-0.00% gap=2.918->2.898
+    RMSE ft=0.0457  base=0.0632  THz
+[14/48] MoSe2 (train) ...
+    relax[ft] steps=2 conv=True fmax0=0.011 stress0=+0.15GPa da=+0.00% gap=0.000->0.000
+    relax[base] steps=2 conv=True fmax0=0.017 stress0=-0.02GPa da=+0.00% gap=0.000->0.000
+    RMSE ft=0.0542  base=0.0350  THz
+[15/48] MoSe2_MoTe2_2H (train) ...
+    relax[ft] steps=16 conv=True fmax0=1.829 stress0=-0.45GPa da=+0.00% gap=3.132->3.114
+    relax[base] steps=16 conv=True fmax0=1.825 stress0=-0.78GPa da=+0.00% gap=3.132->3.116
+    RMSE ft=0.0527  base=0.0507  THz
+[16/48] MoSe2_MoTe2_3R (train) ...
+    relax[ft] steps=15 conv=True fmax0=1.823 stress0=-0.50GPa da=+0.00% gap=3.132->3.113
+    relax[base] steps=15 conv=True fmax0=1.822 stress0=-0.84GPa da=+0.00% gap=3.132->3.112
+    RMSE ft=0.0652  base=0.0662  THz
+[17/48] MoSe2_WS2_2H (train) ...
+    relax[ft] steps=14 conv=True fmax0=1.368 stress0=+0.39GPa da=+0.00% gap=2.984->3.004
+    relax[base] steps=14 conv=True fmax0=1.367 stress0=+0.14GPa da=+0.00% gap=2.984->3.007
+    RMSE ft=0.0498  base=0.0431  THz
+[18/48] MoSe2_WS2_3R (train) ...
+    relax[ft] steps=6 conv=True fmax0=1.361 stress0=+0.42GPa da=-0.00% gap=2.984->2.983
+    relax[base] steps=14 conv=True fmax0=1.362 stress0=+0.16GPa da=-0.00% gap=2.984->2.996
+    RMSE ft=0.0491  base=0.0435  THz
+[19/48] MoSe2_WSe2_2H (novel_pairing) ...
+    relax[ft] steps=6 conv=True fmax0=0.101 stress0=+0.54GPa da=+0.00% gap=3.044->3.044
+    relax[base] steps=6 conv=True fmax0=0.103 stress0=+0.21GPa da=+0.00% gap=3.044->3.044
+    RMSE ft=0.0970  base=0.1103  THz
+[20/48] MoSe2_WSe2_3R (novel_pairing) ...
+    relax[ft] steps=13 conv=True fmax0=0.145 stress0=+0.63GPa da=-0.00% gap=3.044->3.033
+    relax[base] steps=13 conv=True fmax0=0.144 stress0=+0.29GPa da=-0.00% gap=3.044->3.037
+    RMSE ft=0.0362  base=0.0441  THz
+[21/48] MoSe2_WTe2_2H (val) ...
+    relax[ft] steps=15 conv=True fmax0=2.091 stress0=-0.73GPa da=+0.00% gap=3.141->3.103
+    relax[base] steps=15 conv=True fmax0=2.084 stress0=-1.03GPa da=+0.00% gap=3.141->3.108
+    RMSE ft=0.0471  base=0.0484  THz
+[22/48] MoSe2_WTe2_3R (train) ...
+    relax[ft] steps=15 conv=True fmax0=2.085 stress0=-0.78GPa da=+0.00% gap=3.141->3.102
+    relax[base] steps=15 conv=True fmax0=2.081 stress0=-1.09GPa da=+0.00% gap=3.141->3.103
+    RMSE ft=0.0702  base=0.0708  THz
+[23/48] MoSe2_bilayer_2H (train) ...
+    relax[ft] steps=4 conv=True fmax0=0.005 stress0=+0.44GPa da=+0.00% gap=3.036->3.036
+    relax[base] steps=10 conv=True fmax0=0.004 stress0=+0.08GPa da=+0.00% gap=3.036->3.030
+    RMSE ft=0.0488  base=0.0374  THz
+[24/48] MoSe2_bilayer_3R (train) ...
+    relax[ft] steps=12 conv=True fmax0=0.048 stress0=+0.38GPa da=+0.00% gap=3.036->3.026
+    relax[base] steps=12 conv=True fmax0=0.047 stress0=+0.01GPa da=+0.00% gap=3.036->3.025
+    RMSE ft=0.0310  base=0.0454  THz
+[25/48] MoTe2 (train) ...
+    relax[ft] steps=0 conv=True fmax0=0.000 stress0=-0.05GPa da=-0.00% gap=0.000->0.000
+    relax[base] steps=0 conv=True fmax0=0.000 stress0=-0.14GPa da=-0.00% gap=0.000->0.000
+    RMSE ft=0.0414  base=0.0460  THz
+[26/48] MoTe2_WS2_2H (novel_pairing) ...
+    relax[ft] steps=16 conv=True fmax0=3.580 stress0=-1.78GPa da=+0.00% gap=3.080->3.091
+    relax[base] steps=15 conv=True fmax0=3.576 stress0=-2.11GPa da=+0.00% gap=3.080->3.100
+    RMSE ft=0.0556  base=0.0639  THz
+[27/48] MoTe2_WS2_3R (novel_pairing) ...
+    relax[ft] steps=16 conv=True fmax0=3.542 stress0=-1.63GPa da=+0.00% gap=3.080->3.107
+    relax[base] steps=15 conv=True fmax0=3.542 stress0=-1.97GPa da=+0.00% gap=3.080->3.112
+    RMSE ft=0.0617  base=0.0611  THz
+[28/48] MoTe2_WSe2_2H (train) ...
+    relax[ft] steps=15 conv=True fmax0=1.769 stress0=-0.22GPa da=-0.00% gap=3.140->3.145
+    relax[base] steps=15 conv=True fmax0=1.767 stress0=-0.53GPa da=-0.00% gap=3.140->3.150
+    RMSE ft=0.0712  base=0.0739  THz
+[29/48] MoTe2_WSe2_3R (train) ...
+    relax[ft] steps=15 conv=True fmax0=1.759 stress0=-0.18GPa da=+0.00% gap=3.140->3.169
+    relax[base] steps=15 conv=True fmax0=1.757 stress0=-0.49GPa da=+0.00% gap=3.140->3.167
+    RMSE ft=0.0300  base=0.0314  THz
+[30/48] MoTe2_WTe2_2H (train) ...
+    relax[ft] steps=13 conv=True fmax0=0.086 stress0=+0.01GPa da=+0.00% gap=3.237->3.228
+    relax[base] steps=13 conv=True fmax0=0.090 stress0=-0.15GPa da=+0.00% gap=3.237->3.232
+    RMSE ft=0.0582  base=0.0604  THz
+[31/48] MoTe2_WTe2_3R (train) ...
+    relax[ft] steps=13 conv=True fmax0=0.121 stress0=-0.03GPa da=+0.00% gap=3.237->3.236
+    relax[base] steps=13 conv=True fmax0=0.121 stress0=-0.19GPa da=+0.00% gap=3.237->3.231
+    RMSE ft=0.0664  base=0.0677  THz
+[32/48] MoTe2_bilayer_2H (train) ...
+    relax[ft] steps=11 conv=True fmax0=0.021 stress0=-0.09GPa da=-0.00% gap=3.228->3.223
+    relax[base] steps=5 conv=True fmax0=0.025 stress0=-0.28GPa da=-0.00% gap=3.228->3.229
+    RMSE ft=0.0765  base=0.0793  THz
+[33/48] MoTe2_bilayer_3R (train) ...
+    relax[ft] steps=4 conv=True fmax0=0.054 stress0=-0.13GPa da=-0.00% gap=3.228->3.232
+    relax[base] steps=13 conv=True fmax0=0.054 stress0=-0.32GPa da=-0.00% gap=3.228->3.225
+    RMSE ft=0.0386  base=0.0375  THz
+[34/48] WS2 (train) ...
+    relax[ft] steps=2 conv=True fmax0=0.004 stress0=+0.29GPa da=-0.00% gap=0.000->0.000
+    relax[base] steps=2 conv=True fmax0=0.002 stress0=+0.24GPa da=-0.00% gap=0.000->0.000
+    RMSE ft=0.0242  base=0.0503  THz
+[35/48] WS2_WSe2_2H (novel_pairing) ...
+    relax[ft] steps=14 conv=True fmax0=1.587 stress0=+0.23GPa da=+0.00% gap=2.992->3.004
+    relax[base] steps=14 conv=True fmax0=1.593 stress0=+0.00GPa da=+0.00% gap=2.992->3.011
+    RMSE ft=0.0516  base=0.0411  THz
+[36/48] WS2_WSe2_3R (novel_pairing) ...
+    relax[ft] steps=14 conv=True fmax0=1.567 stress0=+0.31GPa da=+0.00% gap=2.992->2.968
+    relax[base] steps=14 conv=True fmax0=1.574 stress0=+0.06GPa da=+0.00% gap=2.992->2.969
+    RMSE ft=0.0801  base=0.0616  THz
+[37/48] WS2_WTe2_2H (train) ...
+    relax[ft] steps=16 conv=True fmax0=4.005 stress0=-2.35GPa da=-0.00% gap=3.089->3.072
+    relax[base] steps=16 conv=True fmax0=4.002 stress0=-2.66GPa da=-0.00% gap=3.089->3.082
+    RMSE ft=0.0534  base=0.0570  THz
+[38/48] WS2_WTe2_3R (train) ...
+    relax[ft] steps=16 conv=True fmax0=3.939 stress0=-2.05GPa da=+0.00% gap=3.089->3.044
+    relax[base] steps=16 conv=True fmax0=3.939 stress0=-2.38GPa da=+0.00% gap=3.089->3.049
+    RMSE ft=0.0758  base=0.0818  THz
+[39/48] WS2_bilayer_2H (train) ...
+    relax[ft] steps=11 conv=True fmax0=0.055 stress0=+0.90GPa da=-0.00% gap=2.932->2.944
+    relax[base] steps=11 conv=True fmax0=0.060 stress0=+0.77GPa da=-0.00% gap=2.932->2.951
+    RMSE ft=0.0354  base=0.0580  THz
+[40/48] WS2_bilayer_3R (train) ...
+    relax[ft] steps=12 conv=True fmax0=0.072 stress0=+0.98GPa da=+0.00% gap=2.932->2.907
+    relax[base] steps=12 conv=True fmax0=0.074 stress0=+0.84GPa da=+0.00% gap=2.932->2.908
+    RMSE ft=0.0333  base=0.0529  THz
+[41/48] WSe2 (train) ...
+    relax[ft] steps=2 conv=True fmax0=0.004 stress0=+0.33GPa da=+0.00% gap=0.000->0.000
+    relax[base] steps=2 conv=True fmax0=0.004 stress0=+0.20GPa da=+0.00% gap=0.000->0.000
+    RMSE ft=0.0738  base=0.0995  THz
+[42/48] WSe2_WTe2_2H (train) ...
+    relax[ft] steps=15 conv=True fmax0=2.020 stress0=-0.45GPa da=+0.00% gap=3.149->3.132
+    relax[base] steps=8 conv=True fmax0=2.017 stress0=-0.72GPa da=+0.00% gap=3.149->3.139
+    RMSE ft=0.0419  base=0.0426  THz
+[43/48] WSe2_WTe2_3R (train) ...
+    relax[ft] steps=15 conv=True fmax0=1.996 stress0=-0.37GPa da=+0.00% gap=3.149->3.130
+    relax[base] steps=15 conv=True fmax0=1.993 stress0=-0.65GPa da=+0.00% gap=3.149->3.130
+    RMSE ft=0.0393  base=0.0414  THz
+[44/48] WSe2_bilayer_2H (train) ...
+    relax[ft] steps=11 conv=True fmax0=0.010 stress0=+0.71GPa da=+0.00% gap=3.052->3.048
+    relax[base] steps=4 conv=True fmax0=0.011 stress0=+0.42GPa da=+0.00% gap=3.052->3.053
+    RMSE ft=0.0203  base=0.0240  THz
+[45/48] WSe2_bilayer_3R (train) ...
+    relax[ft] steps=12 conv=True fmax0=0.050 stress0=+0.74GPa da=+0.00% gap=3.052->3.039
+    relax[base] steps=12 conv=True fmax0=0.050 stress0=+0.43GPa da=+0.00% gap=3.052->3.043
+    RMSE ft=0.0229  base=0.0252  THz
+[46/48] WTe2 (train) ...
+    relax[ft] steps=2 conv=True fmax0=0.007 stress0=+0.05GPa da=+0.00% gap=0.000->0.000
+    relax[base] steps=2 conv=True fmax0=0.005 stress0=-0.01GPa da=+0.00% gap=0.000->0.000
+    RMSE ft=0.0561  base=0.0523  THz
+[47/48] WTe2_bilayer_2H (train) ...
+    relax[ft] steps=11 conv=True fmax0=0.018 stress0=+0.14GPa da=+0.00% gap=3.246->3.231
+    relax[base] steps=11 conv=True fmax0=0.020 stress0=+0.00GPa da=+0.00% gap=3.246->3.237
+    RMSE ft=0.0309  base=0.0325  THz
+[48/48] WTe2_bilayer_3R (train) ...
+    relax[ft] steps=13 conv=True fmax0=0.042 stress0=+0.10GPa da=+0.00% gap=3.246->3.237
+    relax[base] steps=13 conv=True fmax0=0.042 stress0=-0.04GPa da=+0.00% gap=3.246->3.232
+    RMSE ft=0.0436  base=0.0447  THz
+
+Wrote per-material results → phonon_comparisons/v5_tmd_cellrelax_omat_baresub_e20_template_relaxpos_eval/results.csv
+
+== val (n=3) ==
+  RMSE (THz)   fine-tuned: mean=0.0500 median=0.0471
+               baseline:   mean=0.0494 median=0.0484
+  fine-tune improves on baseline: 2/3 materials
+
+== novel_pairing (n=6) ==
+  RMSE (THz)   fine-tuned: mean=0.0637 median=0.0586
+               baseline:   mean=0.0637 median=0.0613
+  fine-tune improves on baseline: 3/6 materials
+
+== train (n=39) ==
+  RMSE (THz)   fine-tuned: mean=0.0487 median=0.0491
+               baseline:   mean=0.0537 median=0.0507
+  fine-tune improves on baseline: 29/39 materials
