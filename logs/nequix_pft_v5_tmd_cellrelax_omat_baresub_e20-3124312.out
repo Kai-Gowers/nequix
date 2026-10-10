@@ -1,0 +1,22 @@
+cpu-bind=MASK - g002, task  0  0 [1083349]: mask 0x111000444440 set
+/home/gowers/twist/nequix/.venv/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'repr' attribute with value False was provided to the `Field()` function, which has no effect in the context it was used. 'repr' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+/home/gowers/twist/nequix/.venv/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'frozen' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'frozen' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+/home/gowers/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/multiprocessing/popen_fork.py:66: RuntimeWarning: os.fork() was called. os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
+  self.pid = os.fork()
+  0%|          | 0/39 [00:00<?, ?it/s]  5%|▌         | 2/39 [00:00<00:06,  5.48it/s] 18%|█▊        | 7/39 [00:00<00:01, 17.89it/s] 49%|████▊     | 19/39 [00:00<00:00, 45.62it/s] 77%|███████▋  | 30/39 [00:00<00:00, 59.50it/s] 97%|█████████▋| 38/39 [00:00<00:00, 64.02it/s]100%|██████████| 39/39 [00:00<00:00, 48.11it/s]
+computed dataset statistics, add to config yml file to avoid recomputing:
+avg_n_edges: 3996.358974358974
+avg_n_neighbors: 36.957264957264954
+avg_n_nodes: 106.23076923076923
+max_n_edges: 8856
+max_n_nodes: 216
+scale: 0.051967857364288134
+shift: -4.802758628712612
+
+wandb: Tracking run with wandb version 0.22.2
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /home/gowers/twist/nequix/wandb/offline-run-20261010_145832-3brgjxwj
+/home/gowers/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/multiprocessing/popen_fork.py:66: RuntimeWarning: os.fork() was called. os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
+  self.pid = os.fork()
