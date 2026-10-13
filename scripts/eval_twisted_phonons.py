@@ -154,7 +154,24 @@ def load_dft_twisted(dft_dir: Path) -> dict | None:
     seg = band.get("segment_nqpoint")
     edges = np.cumsum([0] + list(seg)) - 1 if seg else np.array([0, len(phonon) - 1])
     edges[0] = 0
+    dos = None
+    dos_dat = dft_dir / "total_dos.dat"
+    if dos_dat.exists():  # written by workflow/phonopy/write_phonon_dos.py; header fixes the grid
+        import re
+
+        head = "\n".join(line for line in dos_dat.read_text().splitlines() if line.startswith("#"))
+        g = lambda pat, cast=float: cast(re.search(pat, head).group(1))  # noqa: E731
+        dos = {
+            "path": dos_dat,
+            "natoms": g(r"natoms\s*=\s*(\d+)", int),
+            "mesh": [int(x) for x in re.search(r"mesh\s*=\s*(\d+)\s+(\d+)\s+(\d+)", head).groups()],
+            "sigma": g(r"sigma\s*=\s*([-\d.eE+]+)"),
+            "freq_min": g(r"freq_min\s*=\s*([-\d.eE+]+)"),
+            "freq_max": g(r"freq_max\s*=\s*([-\d.eE+]+)"),
+            "freq_pitch": g(r"freq_pitch\s*=\s*([-\d.eE+]+)"),
+        }
     return {
+        "dos": dos,
         "supercell_matrix": np.array(ph_yaml["supercell_matrix"]),
         "primitive_matrix": np.array(ph_yaml["primitive_matrix"]) if ph_yaml.get("primitive_matrix") is not None else None,
         "q_list": np.array([e["q-position"] for e in phonon]),
@@ -180,7 +197,30 @@ def model_freqs_on_dft_path(atoms: Atoms, calc, ref: dict) -> tuple[np.ndarray, 
     ph.force_constants = calc.get_hessian(supercell)
     ph.symmetrize_force_constants()
     ph.run_qpoints(ref["q_list"])
-    return np.sort(ph.get_qpoints_dict()["frequencies"], axis=1), len(supercell)
+    freqs = np.sort(ph.get_qpoints_dict()["frequencies"], axis=1)
+    dos = None
+    if ref.get("dos"):
+        spec = ref["dos"]
+        ph.run_mesh(spec["mesh"], is_gamma_center=True, with_eigenvectors=False)
+        ph.run_total_dos(sigma=spec["sigma"], freq_min=spec["freq_min"], freq_max=spec["freq_max"],
+                         freq_pitch=spec["freq_pitch"])
+        d = ph.get_total_dos_dict()
+        dos = (np.asarray(d["frequency_points"]), np.asarray(d["total_dos"]))
+    return freqs, len(supercell), dos
+
+
+def write_dos_dat(path: Path, freq, dos, natoms: int, spec: dict) -> None:
+    """Same header format as workflow/phonopy/write_phonon_dos.py (read by compare_phonon_dos.py)."""
+    m = spec["mesh"]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(f"# natoms = {natoms}\n")
+        f.write(f"# mesh = {m[0]} {m[1]} {m[2]} gamma_center\n")
+        f.write(f"# sigma = {spec['sigma']} THz\n")
+        f.write(f"# freq_min = {spec['freq_min']} freq_max = {spec['freq_max']} freq_pitch = {spec['freq_pitch']}\n")
+        f.write("# columns: frequency_THz total_dos_states_per_THz_per_cell\n")
+        for x, y in zip(freq, dos):
+            f.write(f"{x:14.7f} {y:18.10f}\n")
 
 
 def plot_vs_dft(ref: dict, model_freqs: dict, labels, title, out_path):
@@ -327,8 +367,27 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
         })
         if dft_ref is not None:
             t3 = time.perf_counter()
-            f_model, n_dft_super = model_freqs_on_dft_path(relaxed, calc, dft_ref)
+            f_model, n_dft_super, model_dos = model_freqs_on_dft_path(relaxed, calc, dft_ref)
             dft_freqs_by_tag[tag] = f_model
+            if model_dos is not None:
+                import shutil
+
+                from compare_phonon_dos import dos_mae, load_dos
+
+                spec = dft_ref["dos"]
+                dos_dir = out_dir / "dos"
+                dft_copy = dos_dir / f"{name}_dft_dos.dat"
+                if not dft_copy.exists():
+                    dos_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(spec["path"], dft_copy)
+                ml_path = dos_dir / f"{name}_{tag}_dos.dat"
+                write_dos_dat(ml_path, model_dos[0], model_dos[1], len(relaxed), spec)
+                f_d, d_d, n_d = load_dos(dft_copy)
+                d_ml = model_dos[1] / len(relaxed)
+                row[f"{tag}_dos_mae_0to5_THz"] = dos_mae(f_d, d_d / n_d, model_dos[0], d_ml, 0.0, 5.0)
+                row[f"{tag}_dos_mae_all_THz"] = dos_mae(f_d, d_d / n_d, model_dos[0], d_ml)
+                print(f"  DOS[{tag}] mesh {spec['mesh']} sigma {spec['sigma']} THz: MAE vs DFT per atom "
+                      f"0-5 THz {row[f'{tag}_dos_mae_0to5_THz']:.5f}, all {row[f'{tag}_dos_mae_all_THz']:.5f} -> {ml_path}")
             err = f_model - dft_ref["freqs"]
             low = dft_ref["freqs"] < 2.0
             rmse = float(np.sqrt((err ** 2).mean()))
