@@ -7,6 +7,7 @@ reference in `workflow/FINAL_RESULTS_TWISTED/` (e.g. `MoS2_twist_m1_near0` = MoS
 | subfolder | what it is |
 |---|---|
 | `fixed/` | model Hessian at the DFT-relaxed POSCAR (`--relax none`): force-constant accuracy only |
+| `relaxpos_from_dft/` | (MoS2 m1 only) same as `relaxpos/` but starting from the DFT POSCAR instead of the template; landed on the identical minimum (gap 3.095 Å, same frequencies to 4 decimals), so the start structure does not matter for this cell |
 | `relaxpos/` | template start (`workflow/twisted/structures/<name>/POSCAR`), positions relaxed by the model, `--max-follow 0` so the symmetric registry DFT kept is preserved: the deployment number |
 
 Both runs: model = `checkpoints/nequix-healthy-2d-pft-v5-tmd-cellrelax-omat-baresub-e20.nqx`
