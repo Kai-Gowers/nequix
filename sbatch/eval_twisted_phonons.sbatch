@@ -13,6 +13,10 @@ cd "$SLURM_SUBMIT_DIR"
 # Model-only twisted-bilayer phonons (relax positions with the model, analytical Hessian, Gamma-K-M-Gamma).
 # Structures come from workflow/twisted/build_twisted_bilayer.py. Put the largest supercell last.
 # Extra options (e.g. --baseline-model nequix-omat-1, --supercell-k 1, --relax none) via TWISTED_EXTRA_ARGS.
+# GOTCHA: the login shell sets SBATCH_EXPORT=none, so a plain `TWISTED_EXTRA_ARGS=... sbatch ...` prefix is silently
+# dropped (jobs 3145023/3145024 ran with defaults). Pass it explicitly:
+#   sbatch --export=ALL,TWISTED_EXTRA_ARGS="--add-d3 finetuned --dft-results ../workflow/FINAL_RESULTS_TWISTED" ...
+# and check line 2 of the log ("D3 added to: ...; DFT references: ...").
 #
 #   sbatch --job-name=nequix_twisted_mos2_near0 sbatch/eval_twisted_phonons.sbatch \
 #     checkpoints/nequix-healthy-2d-pft-v4-tmd-omat.nqx phonon_comparisons/twisted_mos2_near0 \
