@@ -82,7 +82,7 @@ def compare(dft_path: Path, ml_paths: list[Path], ml_labels: list[str], fmin: fl
     return out
 
 
-def plot(result: dict, title: str, out_path: Path) -> None:
+def plot(result: dict, title: str, out_path: Path, xlim: tuple[float, float] | None = None) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -97,8 +97,12 @@ def plot(result: dict, title: str, out_path: Path) -> None:
         ax.plot(f, result["curves"][m["label"]], color=colors[i % len(colors)], lw=1.0, ls="--",
                 label=f"{m['label']}  (MAE {fmin:g}-{fmax:g} THz: {m['mae_window_THz']:.4f})")
     ax.axvspan(fmin, fmax, color="gray", alpha=0.08, lw=0)
-    ax.set_xlim(f[0], f[-1])
-    ax.set_ylim(bottom=0)
+    lo, hi = xlim if xlim else (f[0], f[-1])
+    ax.set_xlim(lo, hi)
+    m = (f >= lo) & (f <= hi)
+    ymax = max(np.max(result["curves"][k][m]) for k in result["curves"] if k != "freq")
+    ax.set_ylim(0, 1.08 * ymax if ymax > 0 else None)
+    ax.axvline(0, color="gray", lw=0.5, ls=":")
     ax.set_xlabel("Frequency (THz)")
     ax.set_ylabel("DOS (states / THz / atom)")
     ax.set_title(title, fontsize=10)
@@ -117,6 +121,8 @@ def main() -> None:
     ap.add_argument("--natoms-dft", type=int, default=None)
     ap.add_argument("--natoms-ml", type=int, nargs="*", default=None)
     ap.add_argument("--mae-range", type=float, nargs=2, default=[0.0, 5.0], metavar=("FMIN", "FMAX"))
+    ap.add_argument("--xlim", type=float, nargs=2, default=None, metavar=("LO", "HI"),
+                    help="plot only this frequency range (THz), e.g. --xlim -1 2 for the interlayer/acoustic region")
     ap.add_argument("--title", default=None)
     ap.add_argument("--output", type=Path, required=True, help="PNG path; a .json with the numbers is written next to it")
     args = ap.parse_args()
@@ -134,7 +140,8 @@ def main() -> None:
     for m in res["models"]:
         print(f"{m['label']:<28}{m['natoms']:>7}{m['integral_states_per_atom']:>10.3f}{m['mae_window_THz']:>14.5f}{m['mae_all_THz']:>10.5f}")
 
-    plot(res, args.title or f"{args.dft.stem.replace('_dft_dos', '')}: phonon DOS, DFT vs Nequix", args.output)
+    plot(res, args.title or f"{args.dft.stem.replace('_dft_dos', '')}: phonon DOS, DFT vs Nequix", args.output,
+         xlim=tuple(args.xlim) if args.xlim else None)
     summary = {k: v for k, v in res.items() if k != "curves"}
     args.output.with_suffix(".json").write_text(json.dumps(summary, indent=1))
     print(f"Wrote {args.output} and {args.output.with_suffix('.json')}")
