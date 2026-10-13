@@ -140,6 +140,79 @@ def displace_along_mode(atoms: Atoms, pattern: np.ndarray, amplitude: float) -> 
     return out
 
 
+def load_dft_twisted(dft_dir: Path) -> dict | None:
+    """DFT reference for a twisted cell from a workflow FINAL_RESULTS_TWISTED/<name>/ dir
+    (phonopy.yaml for the supercell/primitive matrices, band.yaml for the exact q-list,
+    distances and frequencies). Returns None when the dir has no band.yaml."""
+    import yaml
+
+    if not (dft_dir / "band.yaml").exists():
+        return None
+    ph_yaml = yaml.safe_load((dft_dir / "phonopy.yaml").read_text())
+    band = yaml.safe_load((dft_dir / "band.yaml").read_text())
+    phonon = band["phonon"]
+    seg = band.get("segment_nqpoint")
+    edges = np.cumsum([0] + list(seg)) - 1 if seg else np.array([0, len(phonon) - 1])
+    edges[0] = 0
+    return {
+        "supercell_matrix": np.array(ph_yaml["supercell_matrix"]),
+        "primitive_matrix": np.array(ph_yaml["primitive_matrix"]) if ph_yaml.get("primitive_matrix") is not None else None,
+        "q_list": np.array([e["q-position"] for e in phonon]),
+        "distances": np.array([e["distance"] for e in phonon]),
+        "freqs": np.array([sorted(b["frequency"] for b in e["band"]) for e in phonon]),
+        "edges": edges,
+    }
+
+
+def model_freqs_on_dft_path(atoms: Atoms, calc, ref: dict) -> tuple[np.ndarray, int]:
+    """Model frequencies on the DFT q-list, using the DFT supercell/primitive matrices so the
+    fractional q-points mean the same thing (same route as eval_healthy2d_finetune). ASR via
+    symmetrize_force_constants, as in phonopy_bands."""
+    from phonopy import Phonopy
+    from phonopy.structure.atoms import PhonopyAtoms
+
+    unitcell = PhonopyAtoms(
+        symbols=atoms.get_chemical_symbols(), cell=atoms.cell[:], scaled_positions=atoms.get_scaled_positions()
+    )
+    ph = Phonopy(unitcell, supercell_matrix=ref["supercell_matrix"], primitive_matrix=ref["primitive_matrix"],
+                 is_symmetry=False, log_level=0)
+    supercell = phonopy_atoms_to_ase(ph.supercell)
+    ph.force_constants = calc.get_hessian(supercell)
+    ph.symmetrize_force_constants()
+    ph.run_qpoints(ref["q_list"])
+    return np.sort(ph.get_qpoints_dict()["frequencies"], axis=1), len(supercell)
+
+
+def plot_vs_dft(ref: dict, model_freqs: dict, labels, title, out_path):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    d = ref["distances"]
+    ax.plot(d, ref["freqs"], color="black", lw=0.8)
+    ax.plot([], [], color="black", label="DFT (PBE+D3)")
+    styles = {"ft": ("tab:blue", "-", "fine-tuned"), "base": ("tab:red", "--", "baseline")}
+    for tag, f in model_freqs.items():
+        c, ls, lab = styles.get(tag, ("tab:green", ":", tag))
+        ax.plot(d, f, color=c, lw=0.7, ls=ls)
+        ax.plot([], [], color=c, ls=ls, label=lab)
+    ax.legend()
+    ax.axhline(0, color="gray", lw=0.5)
+    for e in ref["edges"]:
+        ax.axvline(d[e], color="gray", lw=0.5)
+    ax.set_xticks([d[e] for e in ref["edges"]])
+    ax.set_xticklabels(labels.split()[: len(ref["edges"])])
+    ax.set_xlim(d[0], d[-1])
+    ax.set_ylabel("Frequency (THz)")
+    ax.set_title(title, fontsize=10)
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
 def plot_bands(distances, freqs, edges, labels, title, out_path, extra=None):
     import matplotlib
 
@@ -170,8 +243,12 @@ def plot_bands(distances, freqs, edges, labels, title, out_path, extra=None):
 def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str, fmax: float, max_steps: int,
                        k_override: int | None, plots: bool, rattle: float = 0.0, max_follow: int = 3,
                        follow_threshold: float = 0.02, follow_amplitude: float = 0.3,
-                       follow_fmax_factor: float = 0.2) -> dict:
+                       follow_fmax_factor: float = 0.2, dft_results: Path | None = None) -> dict:
     name = struct_dir.name
+    dft_ref = load_dft_twisted(dft_results / name) if dft_results is not None else None
+    if dft_results is not None and dft_ref is None:
+        print(f"  (no DFT reference under {dft_results / name}; skipping DFT comparison)")
+    dft_freqs_by_tag = {}
     atoms = ase_read(str(struct_dir / "POSCAR"), format="vasp")
     atoms.pbc = True
     meta = {}
@@ -248,6 +325,27 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
             f"{tag}_t_relax_s": round(t_relax, 1),
             f"{tag}_t_phonons_s": round(t2 - t1, 1),
         })
+        if dft_ref is not None:
+            t3 = time.perf_counter()
+            f_model, n_dft_super = model_freqs_on_dft_path(relaxed, calc, dft_ref)
+            dft_freqs_by_tag[tag] = f_model
+            err = f_model - dft_ref["freqs"]
+            low = dft_ref["freqs"] < 2.0
+            rmse = float(np.sqrt((err ** 2).mean()))
+            row.update({
+                f"{tag}_dft_rmse_THz": rmse,
+                f"{tag}_dft_max_abs_err_THz": float(np.abs(err).max()),
+                f"{tag}_dft_rmse_below2THz_THz": float(np.sqrt((err[low] ** 2).mean())) if low.any() else float("nan"),
+                f"{tag}_dft_min_freq_THz": float(dft_ref["freqs"].min()),
+                f"{tag}_dft_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in np.sort(dft_ref["freqs"][0])[3:6]),
+                f"{tag}_dft_path_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in np.sort(f_model[0])[3:6]),
+                f"{tag}_dft_supercell_atoms": n_dft_super,
+            })
+            print(f"  vs DFT[{tag}] on the DFT {dft_ref['supercell_matrix'].diagonal().tolist()} supercell "
+                  f"({n_dft_super} atoms, {time.perf_counter() - t3:.0f} s): RMSE {rmse:.4f} THz (<2 THz: "
+                  f"{row[f'{tag}_dft_rmse_below2THz_THz']:.4f}), max |err| {row[f'{tag}_dft_max_abs_err_THz']:.4f}; "
+                  f"Gamma lowest optical DFT {row[f'{tag}_dft_gamma_optical_lowest3_THz']} vs model "
+                  f"{row[f'{tag}_dft_path_gamma_optical_lowest3_THz']}")
         (out_dir / "bands").mkdir(parents=True, exist_ok=True)
         np.savez(out_dir / "bands" / f"{name}_{tag}.npz", distances=distances, frequencies=freqs, edges=edges,
                  gamma_before_asr=g_before, gamma_after_asr=g_after, labels=np.array(HEX_BAND_LABELS.split()))
@@ -262,6 +360,12 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
         title = (f"{name}: Nequix fine-tuned phonons ({theta}{len(atoms)} atoms, phonopy {k}x{k}x1, "
                  f"model-relaxed {relax})")
         plot_bands(d, f, e, HEX_BAND_LABELS, title, out_dir / "plots" / f"{name}_bands.png", extra=extra)
+        if dft_ref is not None and dft_freqs_by_tag:
+            np.savez(out_dir / "bands" / f"{name}_vs_dft.npz", distances=dft_ref["distances"], dft=dft_ref["freqs"],
+                     edges=dft_ref["edges"], **{f"model_{t}": v for t, v in dft_freqs_by_tag.items()})
+            plot_vs_dft(dft_ref, dft_freqs_by_tag, HEX_BAND_LABELS,
+                        f"{name}: DFT vs Nequix ({len(atoms)} atoms, DFT supercell, model-relaxed {relax})",
+                        out_dir / "plots" / f"{name}_vs_dft.png")
     return row
 
 
@@ -288,6 +392,13 @@ def main() -> None:
     parser.add_argument("--follow-fmax-factor", type=float, default=0.2,
                         help="fmax multiplier for follow-round relaxations (default 0.2 -> 2e-4 eV/A)")
     parser.add_argument("--follow-amplitude", type=float, default=0.3, help="A; max atomic displacement of the kick")
+    parser.add_argument("--add-d3", choices=["none", "finetuned", "baseline", "both"], default="none",
+                        help="Wrap the named model(s) in explicit_dispersion.d3.NequixD3Calculator (bare-PBE models "
+                             "such as the v5 baresub-e20 default: D3 forces during relaxation + analytic D3 Hessian)")
+    parser.add_argument("--dft-results", type=Path, default=None,
+                        help="Parent dir of DFT references (e.g. ../workflow/FINAL_RESULTS_TWISTED): for each "
+                             "structure <name>, <dir>/<name>/{phonopy.yaml,band.yaml} gives the supercell and the "
+                             "exact q-path; the model is re-evaluated on that path for an RMSE and an overlay plot")
     args = parser.parse_args()
 
     from nequix.calculator import NequixCalculator
@@ -298,6 +409,15 @@ def main() -> None:
             calcs["base"] = NequixCalculator(model_path=args.baseline_model, backend="jax", use_kernel=False)
         else:
             calcs["base"] = NequixCalculator(model_name=args.baseline_model, backend="jax", use_kernel=False)
+    if args.add_d3 != "none":
+        sys.path.insert(0, str(ROOT / "explicit_dispersion"))
+        from d3 import NequixD3Calculator  # noqa: E402
+
+        if args.add_d3 in ("finetuned", "both"):
+            calcs["ft"] = NequixD3Calculator(calcs["ft"])
+        if args.add_d3 in ("baseline", "both") and "base" in calcs:
+            calcs["base"] = NequixD3Calculator(calcs["base"])
+    print(f"D3 added to: {args.add_d3}; DFT references: {args.dft_results}")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     csv_path = args.output_dir / "results.csv"
@@ -306,7 +426,7 @@ def main() -> None:
         row = evaluate_structure(struct_dir, calcs, args.output_dir, args.relax, args.fmax, args.max_steps,
                                  args.supercell_k, not args.no_plots, rattle=args.rattle, max_follow=args.max_follow,
                                  follow_threshold=args.follow_threshold, follow_amplitude=args.follow_amplitude,
-                                 follow_fmax_factor=args.follow_fmax_factor)
+                                 follow_fmax_factor=args.follow_fmax_factor, dft_results=args.dft_results)
         rows.append(row)
         keys = sorted({kk for r in rows for kk in r}, key=lambda s: (s not in row, s))
         keys = list(row.keys()) + [kk for kk in keys if kk not in row]
