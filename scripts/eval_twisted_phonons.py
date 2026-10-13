@@ -377,9 +377,8 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
                 spec = dft_ref["dos"]
                 dos_dir = out_dir / "dos"
                 dft_copy = dos_dir / f"{name}_dft_dos.dat"
-                if not dft_copy.exists():
-                    dos_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copy(spec["path"], dft_copy)
+                dos_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy(spec["path"], dft_copy)  # always refresh: the DFT grid may have changed
                 ml_path = dos_dir / f"{name}_{tag}_dos.dat"
                 write_dos_dat(ml_path, model_dos[0], model_dos[1], len(relaxed), spec)
                 f_d, d_d, n_d = load_dos(dft_copy)
