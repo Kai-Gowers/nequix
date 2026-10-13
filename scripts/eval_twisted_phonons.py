@@ -21,7 +21,7 @@ Conventions
 Usage (from nequix/):
   uv run python scripts/eval_twisted_phonons.py \\
       --model checkpoints/nequix-healthy-2d-pft-v4-tmd-omat.nqx \\
-      --output-dir phonon_comparisons/twisted_mos2_near0 \\
+      --output-dir phonon_comparisons/twisted/<name>/relaxpos   (layout: phonon_comparisons/twisted/README.md) \\
       --structures ../workflow/twisted/structures/MoS2_twist_m{1,5,4,2,3}_near0
 """
 

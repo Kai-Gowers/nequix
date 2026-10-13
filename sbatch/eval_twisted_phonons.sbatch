@@ -18,8 +18,8 @@ cd "$SLURM_SUBMIT_DIR"
 #   sbatch --export=ALL,TWISTED_EXTRA_ARGS="--add-d3 finetuned --dft-results ../workflow/FINAL_RESULTS_TWISTED" ...
 # and check line 2 of the log ("D3 added to: ...; DFT references: ...").
 #
-#   sbatch --job-name=nequix_twisted_mos2_near0 sbatch/eval_twisted_phonons.sbatch \
-#     checkpoints/nequix-healthy-2d-pft-v4-tmd-omat.nqx phonon_comparisons/twisted_mos2_near0 \
+#   sbatch --job-name=twisted_<name>_relaxpos sbatch/eval_twisted_phonons.sbatch   (layout: phonon_comparisons/twisted/README.md) \
+#     checkpoints/nequix-healthy-2d-pft-v5-tmd-cellrelax-omat-baresub-e20.nqx phonon_comparisons/twisted/<name>/relaxpos \
 #     ../workflow/twisted/structures/MoS2_twist_m{1,5,4,2,3}_near0
 MODEL="${1:?Usage: sbatch eval_twisted_phonons.sbatch <model.nqx> <output-dir> <structure-dir>...}"
 OUTPUT_DIR="${2:?output-dir required}"
