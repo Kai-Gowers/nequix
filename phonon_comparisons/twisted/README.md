@@ -8,9 +8,8 @@ reference in `workflow/FINAL_RESULTS_TWISTED/` (e.g. `MoS2_twist_m1_near0` = MoS
 |---|---|
 | `fixed/` | model Hessian at the DFT-relaxed POSCAR (`--relax none`): force-constant accuracy only |
 | `relaxpos/` | template start (`workflow/twisted/structures/<name>/POSCAR`), positions relaxed by the model, `--max-follow 0` so the symmetric registry DFT kept is preserved: the deployment number |
-| `*_v4baseline/` | same two runs but with the fine-tuned implicit-D3 `-pft-v4-tmd-omat` as the baseline (secondary, fine-tune vs fine-tune) |
 
-`fixed/` and `relaxpos/` are the canonical pair: model = `checkpoints/nequix-healthy-2d-pft-v5-tmd-cellrelax-omat-baresub-e20.nqx`
+Both runs: model = `checkpoints/nequix-healthy-2d-pft-v5-tmd-cellrelax-omat-baresub-e20.nqx`
 + explicit D3 (`--add-d3 finetuned`), baseline = `models/nequix-omat-1.nqx` zero-shot (no D3), phonopy supercell = the DFT one
 (`--supercell-k 2` for m1; m2/m3 use 1 1 1).
 
