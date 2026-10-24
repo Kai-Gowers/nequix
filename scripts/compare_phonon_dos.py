@@ -59,6 +59,18 @@ def dos_mae(f_ref: np.ndarray, d_ref: np.ndarray, f_ml: np.ndarray, d_ml: np.nda
     return float(np.abs(d_ml_on_ref[mask] - d_ref[mask]).mean())
 
 
+def dos_rmse(f_ref: np.ndarray, d_ref: np.ndarray, f_ml: np.ndarray, d_ml: np.ndarray,
+             fmin: float | None = None, fmax: float | None = None) -> float:
+    """Root-mean-square (DOS_ml - DOS_ref) on the reference grid within [fmin, fmax]; same masking as dos_mae."""
+    d_ml_on_ref = np.interp(f_ref, f_ml, d_ml, left=0.0, right=0.0)
+    mask = np.ones_like(f_ref, dtype=bool)
+    if fmin is not None:
+        mask &= f_ref >= fmin
+    if fmax is not None:
+        mask &= f_ref <= fmax
+    return float(np.sqrt(((d_ml_on_ref[mask] - d_ref[mask]) ** 2).mean()))
+
+
 def compare(dft_path: Path, ml_paths: list[Path], ml_labels: list[str], fmin: float, fmax: float,
             natoms_dft: int | None = None, natoms_ml: list[int] | None = None) -> dict:
     f_dft, d_dft, n_dft = load_dos(dft_path, natoms_dft)

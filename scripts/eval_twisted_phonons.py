@@ -372,7 +372,7 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
             if model_dos is not None:
                 import shutil
 
-                from compare_phonon_dos import dos_mae, load_dos
+                from compare_phonon_dos import dos_mae, dos_rmse, load_dos
 
                 spec = dft_ref["dos"]
                 dos_dir = out_dir / "dos"
@@ -385,8 +385,11 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
                 d_ml = model_dos[1] / len(relaxed)
                 row[f"{tag}_dos_mae_0to5_THz"] = dos_mae(f_d, d_d / n_d, model_dos[0], d_ml, 0.0, 5.0)
                 row[f"{tag}_dos_mae_all_THz"] = dos_mae(f_d, d_d / n_d, model_dos[0], d_ml)
+                row[f"{tag}_dos_rmse_0to5_THz"] = dos_rmse(f_d, d_d / n_d, model_dos[0], d_ml, 0.0, 5.0)
+                row[f"{tag}_dos_rmse_all_THz"] = dos_rmse(f_d, d_d / n_d, model_dos[0], d_ml)
                 print(f"  DOS[{tag}] mesh {spec['mesh']} sigma {spec['sigma']} THz: MAE vs DFT per atom "
-                      f"0-5 THz {row[f'{tag}_dos_mae_0to5_THz']:.5f}, all {row[f'{tag}_dos_mae_all_THz']:.5f} -> {ml_path}")
+                      f"0-5 THz {row[f'{tag}_dos_mae_0to5_THz']:.5f}, all {row[f'{tag}_dos_mae_all_THz']:.5f}; RMSE "
+                      f"0-5 THz {row[f'{tag}_dos_rmse_0to5_THz']:.5f}, all {row[f'{tag}_dos_rmse_all_THz']:.5f} -> {ml_path}")
             err = f_model - dft_ref["freqs"]
             low = dft_ref["freqs"] < 2.0
             rmse = float(np.sqrt((err ** 2).mean()))
