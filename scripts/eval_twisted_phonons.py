@@ -165,7 +165,7 @@ def load_dft_twisted(dft_dir: Path) -> dict | None:
             "path": dos_dat,
             "natoms": g(r"natoms\s*=\s*(\d+)", int),
             "mesh": [int(x) for x in re.search(r"mesh\s*=\s*(\d+)\s+(\d+)\s+(\d+)", head).groups()],
-            "sigma": g(r"sigma\s*=\s*([-\d.eE+]+)"),
+            "sigma": None if re.search(r"sigma\s*=\s*(tetrahedron|none)", head, re.I) else g(r"sigma\s*=\s*([-\d.eE+]+)"),
             "freq_min": g(r"freq_min\s*=\s*([-\d.eE+]+)"),
             "freq_max": g(r"freq_max\s*=\s*([-\d.eE+]+)"),
             "freq_pitch": g(r"freq_pitch\s*=\s*([-\d.eE+]+)"),
@@ -216,7 +216,8 @@ def write_dos_dat(path: Path, freq, dos, natoms: int, spec: dict) -> None:
     with open(path, "w") as f:
         f.write(f"# natoms = {natoms}\n")
         f.write(f"# mesh = {m[0]} {m[1]} {m[2]} gamma_center\n")
-        f.write(f"# sigma = {spec['sigma']} THz\n")
+        sigma_txt = "tetrahedron" if spec["sigma"] is None else f"{spec['sigma']} THz"
+        f.write(f"# sigma = {sigma_txt}\n")
         f.write(f"# freq_min = {spec['freq_min']} freq_max = {spec['freq_max']} freq_pitch = {spec['freq_pitch']}\n")
         f.write("# columns: frequency_THz total_dos_states_per_THz_per_cell\n")
         for x, y in zip(freq, dos):
