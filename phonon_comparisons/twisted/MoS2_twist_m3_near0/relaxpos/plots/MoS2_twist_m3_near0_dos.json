@@ -1,0 +1,29 @@
+{
+ "dft": {
+  "path": "phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/dos/MoS2_twist_m3_near0_dft_dos.dat",
+  "natoms": 222,
+  "integral_states_per_atom": 3.00866331664946
+ },
+ "mae_range_THz": [
+  0.0,
+  5.0
+ ],
+ "models": [
+  {
+   "label": "fine-tuned v5 + D3",
+   "path": "phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/dos/MoS2_twist_m3_near0_ft_dos.dat",
+   "natoms": 222,
+   "integral_states_per_atom": 3.0067211952225685,
+   "mae_window_THz": 0.016081902470134506,
+   "mae_all_THz": 0.05083465418887857
+  },
+  {
+   "label": "omat-1 zero-shot",
+   "path": "phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/dos/MoS2_twist_m3_near0_base_dos.dat",
+   "natoms": 222,
+   "integral_states_per_atom": 2.9777626556775183,
+   "mae_window_THz": 0.018390563421261084,
+   "mae_all_THz": 0.10371340189697908
+  }
+ ]
+}

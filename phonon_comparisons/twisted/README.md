@@ -27,12 +27,17 @@ The earlier MoS2 m1 comparison against the production-INCAR reference (Γ shear 
 | MoS2_WS2 m1 21.8° | relaxpos | 0.030 | 0.025 | 0.059 | 0.020 | 0.175 | 0.087 | −0.13 / 1.00 |
 | MoS2 m2 13.2° | fixed | 0.035 | 0.054 | 0.030 | 0.014 | 0.197 | 0.040 | +0.09 / 0.90 (0.017 / 1.103) |
 | MoS2 m2 13.2° | relaxpos | 0.034 | 0.035 | 0.024 | 0.013 | 0.215 | 0.033 | −0.06 / 1.07 |
+| MoS2 m3 9.4° | fixed | 0.033 | 0.047 | 0.036 | 0.017 | 0.193 | 0.043 | +0.10 / 0.91 (0.018 / 1.085) |
+| MoS2 m3 9.4° | relaxpos | 0.033 | 0.037 | 0.027 | 0.016 | 0.212 | 0.032 | +0.05 / 1.08 |
 
 ft = v5 cellrelax baresub-e20 + D3; base = omat-1 zero-shot. Band RMSE on the DFT q-path (Γ–K–M–Γ, 153 points, all bands).
 **DOS = linear tetrahedron method (no smearing) since 2026-10-24** (`write_phonon_dos.py` default: mesh length 400 Å → 55×55×1 / 34×34×1,
 pitch 0.01 THz; the PI found the earlier σ = 0.1 THz Gaussian DOS too smooth). DOS errors are per atom on the DFT grid and are
 3–6× larger than with σ = 0.1 (same runs: 0.007–0.011 RMSE) because sharp van Hove peaks penalise small frequency shifts;
-the band RMSE is unaffected. relaxpos gaps: ft 3.095 / 3.096 / 3.064 Å vs DFT 3.192 / 3.198 / 3.151; base 3.96–3.98 Å.
+the band RMSE is unaffected. relaxpos gaps: ft 3.095 / 3.096 / 3.064 / 3.006 Å vs DFT 3.192 / 3.198 / 3.151 / 3.074 (m1, MoS2_WS2 m1, m2, m3); base 3.95–3.98 Å.
+MoS2 m3 (9.4°, 222 atoms, 1×1×1; evals 2026-10-26, jobs 3227750/1): no imaginary mode — the ft shear pair is positive but 3–6× too
+stiff (+0.10 fixed / +0.05 relaxpos vs DFT +0.018), i.e. the same interlayer-landscape error as the imaginary pair at 21.8°, with the
+opposite sign; breathing 0.91 (fixed) / 1.08 (relaxpos) vs 1.085.
 Open discrepancy (unchanged from 10-13): the fine-tuned model gives an imaginary Γ shear pair (−0.13…−0.17 THz) at the symmetric registry
 in the 2×2×1 m1 cells where grid-tight DFT and the sliding scan give +0.03…+0.05 (near-free phason); its breathing mode is 0.05–0.25 THz
 soft. This is inherited from omat-1 (base −0.19 at fixed geometry) and is what the `< 2 THz` column measures.
