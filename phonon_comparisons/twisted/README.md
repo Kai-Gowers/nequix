@@ -37,6 +37,13 @@ Open discrepancy (unchanged from 10-13): the fine-tuned model gives an imaginary
 in the 2×2×1 m1 cells where grid-tight DFT and the sliding scan give +0.03…+0.05 (near-free phason); its breathing mode is 0.05–0.25 THz
 soft. This is inherited from omat-1 (base −0.19 at fixed geometry) and is what the `< 2 THz` column measures.
 
+**Figure for the Γ interlayer modes:** `gamma_zoom_v5.png` / `.pdf` (2026-10-26, `scripts/plot_twisted_gamma_zoom.py` on the
+`workflow/share/twisted_dft_vs_nequix_v2` export) — the 0–1.6 THz window of all three cells × {fixed, relaxpos} with the Γ
+shear-pair / breathing values annotated; the full-range `plots/<name>_vs_dft.png` overlays hide the imaginary shear pair.
+Caveat on `results.csv`: `*_gamma_optical_lowest3_THz` takes the 3 modes after the 3 lowest *sorted* Γ frequencies, so when the
+shear pair is imaginary it is sorted below the acoustic zeros and the column shows 0;0;breathing — read the shear value from
+`*_min_freq_THz` (the path minimum sits at Γ in those runs) or from the figure.
+
 Each run folder holds `results.csv` (one row; RMSE vs DFT on the DFT q-path, DOS MAE + RMSE, Γ modes, relaxation info),
 `plots/<name>_bands.png` (model only), `plots/<name>_vs_dft.png` (band overlay), `plots/<name>_dos.png` + `.json`
 (per-atom DOS, DFT solid / ML dashed, MAE 0–5 THz), `dos/<name>_{dft,ft,base}_dos.dat` (same grid, header has natoms/mesh/σ),
