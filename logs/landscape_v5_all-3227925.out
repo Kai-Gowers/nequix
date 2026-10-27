@@ -1,0 +1,86 @@
+cpu-bind=MASK - g002, task  0  0 [3289615]: mask 0x100004445440 set
+[1/42] MoS2_MoSe2_2H
+    corrugation meV ft+D3 147.8 base 151.1 | K_shear eq ft+D3 +0.1529 base +0.0922 | K_zz eq ft+D3 +0.6335 | dz_min ft+D3 +0.019 base +nan A
+[2/42] MoS2_MoSe2_3R
+    corrugation meV ft+D3 162.8 base 162.5 | K_shear eq ft+D3 +0.1572 base +0.0998 | K_zz eq ft+D3 +0.5871 | dz_min ft+D3 +0.021 base +nan A
+[3/42] MoS2_MoTe2_2H
+    corrugation meV ft+D3 169.5 base 168.1 | K_shear eq ft+D3 +0.1457 base +0.1617 | K_zz eq ft+D3 +0.6347 | dz_min ft+D3 -0.002 base +nan A
+[4/42] MoS2_MoTe2_3R
+    corrugation meV ft+D3 201.3 base 196.6 | K_shear eq ft+D3 +0.1718 base +0.1526 | K_zz eq ft+D3 +0.5880 | dz_min ft+D3 +0.022 base +nan A
+[5/42] MoS2_WS2_2H
+    corrugation meV ft+D3 132.9 base 143.9 | K_shear eq ft+D3 +0.1413 base +0.0785 | K_zz eq ft+D3 +0.5983 | dz_min ft+D3 +0.007 base +nan A
+[6/42] MoS2_WS2_3R
+    corrugation meV ft+D3 147.4 base 152.6 | K_shear eq ft+D3 +0.1559 base +0.0988 | K_zz eq ft+D3 +0.5901 | dz_min ft+D3 +0.011 base +nan A
+[7/42] MoS2_WSe2_2H
+    corrugation meV ft+D3 148.1 base 150.3 | K_shear eq ft+D3 +0.1594 base +0.1160 | K_zz eq ft+D3 +0.6507 | dz_min ft+D3 +0.007 base +nan A
+[8/42] MoS2_WSe2_3R
+    corrugation meV ft+D3 170.4 base 169.0 | K_shear eq ft+D3 +0.1680 base +0.1230 | K_zz eq ft+D3 +0.6270 | dz_min ft+D3 +0.025 base +nan A
+[9/42] MoS2_WTe2_2H
+    corrugation meV ft+D3 179.0 base 178.5 | K_shear eq ft+D3 +0.1554 base +0.1670 | K_zz eq ft+D3 +0.6723 | dz_min ft+D3 -0.002 base +nan A
+[10/42] MoS2_WTe2_3R
+    corrugation meV ft+D3 205.7 base 201.6 | K_shear eq ft+D3 +0.1769 base +0.1638 | K_zz eq ft+D3 +0.5929 | dz_min ft+D3 +0.004 base +nan A
+[11/42] MoS2_bilayer_2H
+    corrugation meV ft+D3 132.0 base 145.4 | K_shear eq ft+D3 +0.1441 base +0.0848 | K_zz eq ft+D3 +0.5910 | dz_min ft+D3 -0.001 base +nan A
+[12/42] MoS2_bilayer_3R
+    corrugation meV ft+D3 146.0 base 153.5 | K_shear eq ft+D3 +0.1571 base +0.1011 | K_zz eq ft+D3 +0.5796 | dz_min ft+D3 +0.007 base +nan A
+[13/42] MoSe2_MoTe2_2H
+    corrugation meV ft+D3 192.1 base 193.6 | K_shear eq ft+D3 +0.1622 base +0.1911 | K_zz eq ft+D3 +0.6852 | dz_min ft+D3 +0.017 base +nan A
+[14/42] MoSe2_MoTe2_3R
+    corrugation meV ft+D3 211.5 base 200.3 | K_shear eq ft+D3 +0.1791 base +0.1689 | K_zz eq ft+D3 +0.6357 | dz_min ft+D3 +0.030 base +nan A
+[15/42] MoSe2_WS2_2H
+    corrugation meV ft+D3 147.7 base 148.9 | K_shear eq ft+D3 +0.1560 base +0.1065 | K_zz eq ft+D3 +0.6574 | dz_min ft+D3 +0.037 base +nan A
+[16/42] MoSe2_WS2_3R
+    corrugation meV ft+D3 150.2 base 146.7 | K_shear eq ft+D3 +0.1448 base +0.0796 | K_zz eq ft+D3 +0.5756 | dz_min ft+D3 +0.017 base +nan A
+[17/42] MoSe2_WSe2_2H
+    corrugation meV ft+D3 165.5 base 163.6 | K_shear eq ft+D3 +0.1773 base +0.2246 | K_zz eq ft+D3 +0.7282 | dz_min ft+D3 +0.025 base +nan A
+[18/42] MoSe2_WSe2_3R
+    corrugation meV ft+D3 168.2 base 158.3 | K_shear eq ft+D3 +0.1598 base +0.1726 | K_zz eq ft+D3 +0.5855 | dz_min ft+D3 +0.011 base +nan A
+[19/42] MoSe2_WTe2_2H
+    corrugation meV ft+D3 196.9 base 197.4 | K_shear eq ft+D3 +0.1684 base +0.1967 | K_zz eq ft+D3 +0.6955 | dz_min ft+D3 +0.007 base +nan A
+[20/42] MoSe2_WTe2_3R
+    corrugation meV ft+D3 218.2 base 206.1 | K_shear eq ft+D3 +0.1876 base +0.1789 | K_zz eq ft+D3 +0.6568 | dz_min ft+D3 +0.026 base +nan A
+[21/42] MoSe2_bilayer_2H
+    corrugation meV ft+D3 153.5 base 153.4 | K_shear eq ft+D3 +0.1580 base +0.2021 | K_zz eq ft+D3 +0.6351 | dz_min ft+D3 +0.003 base +nan A
+[22/42] MoSe2_bilayer_3R
+    corrugation meV ft+D3 164.4 base 156.7 | K_shear eq ft+D3 +0.1511 base +0.1544 | K_zz eq ft+D3 +0.5498 | dz_min ft+D3 +0.007 base +nan A
+[23/42] MoTe2_WS2_2H
+    corrugation meV ft+D3 156.2 base 156.5 | K_shear eq ft+D3 +0.1415 base +0.1895 | K_zz eq ft+D3 +0.6316 | dz_min ft+D3 +0.008 base +nan A
+[24/42] MoTe2_WS2_3R
+    corrugation meV ft+D3 135.2 base 128.9 | K_shear eq ft+D3 +0.1115 base +0.1551 | K_zz eq ft+D3 +0.4782 | dz_min ft+D3 -0.038 base +nan A
+[25/42] MoTe2_WSe2_2H
+    corrugation meV ft+D3 188.2 base 184.1 | K_shear eq ft+D3 +0.1613 base +0.1744 | K_zz eq ft+D3 +0.6883 | dz_min ft+D3 +0.018 base +nan A
+[26/42] MoTe2_WSe2_3R
+    corrugation meV ft+D3 173.8 base 162.0 | K_shear eq ft+D3 +0.1474 base +0.1477 | K_zz eq ft+D3 +0.5963 | dz_min ft+D3 +0.004 base +nan A
+[27/42] MoTe2_WTe2_2H
+    corrugation meV ft+D3 241.9 base 237.4 | K_shear eq ft+D3 +0.1876 base +0.1592 | K_zz eq ft+D3 +0.7719 | dz_min ft+D3 +0.020 base +nan A
+[28/42] MoTe2_WTe2_3R
+    corrugation meV ft+D3 238.7 base 227.0 | K_shear eq ft+D3 +0.1948 base +0.1689 | K_zz eq ft+D3 +0.7180 | dz_min ft+D3 +0.009 base +nan A
+[29/42] MoTe2_bilayer_2H
+    corrugation meV ft+D3 236.8 base 235.4 | K_shear eq ft+D3 +0.1800 base +0.1531 | K_zz eq ft+D3 +0.7527 | dz_min ft+D3 +0.019 base +nan A
+[30/42] MoTe2_bilayer_3R
+    corrugation meV ft+D3 232.1 base 222.7 | K_shear eq ft+D3 +0.1863 base +0.1600 | K_zz eq ft+D3 +0.6770 | dz_min ft+D3 +0.002 base +nan A
+[31/42] WS2_WSe2_2H
+    corrugation meV ft+D3 146.4 base 146.2 | K_shear eq ft+D3 +0.1611 base +0.1303 | K_zz eq ft+D3 +0.6713 | dz_min ft+D3 +0.024 base +nan A
+[32/42] WS2_WSe2_3R
+    corrugation meV ft+D3 165.6 base 160.5 | K_shear eq ft+D3 +0.1683 base +0.1329 | K_zz eq ft+D3 +0.6451 | dz_min ft+D3 +0.027 base +nan A
+[33/42] WS2_WTe2_2H
+    corrugation meV ft+D3 164.2 base 163.9 | K_shear eq ft+D3 +0.1502 base +0.1950 | K_zz eq ft+D3 +0.6656 | dz_min ft+D3 +0.008 base +nan A
+[34/42] WS2_WTe2_3R
+    corrugation meV ft+D3 194.7 base 188.2 | K_shear eq ft+D3 +0.1711 base +0.1595 | K_zz eq ft+D3 +0.6159 | dz_min ft+D3 +0.027 base +nan A
+[35/42] WS2_bilayer_2H
+    corrugation meV ft+D3 134.4 base 142.0 | K_shear eq ft+D3 +0.1384 base +0.0725 | K_zz eq ft+D3 +0.6157 | dz_min ft+D3 +0.020 base +nan A
+[36/42] WS2_bilayer_3R
+    corrugation meV ft+D3 139.7 base 140.0 | K_shear eq ft+D3 +0.1461 base +0.0846 | K_zz eq ft+D3 +0.5601 | dz_min ft+D3 -0.012 base +nan A
+[37/42] WSe2_WTe2_2H
+    corrugation meV ft+D3 204.0 base 200.1 | K_shear eq ft+D3 +0.1783 base +0.2020 | K_zz eq ft+D3 +0.7651 | dz_min ft+D3 +0.033 base +nan A
+[38/42] WSe2_WTe2_3R
+    corrugation meV ft+D3 207.2 base 187.6 | K_shear eq ft+D3 +0.1834 base +0.1680 | K_zz eq ft+D3 +0.6497 | dz_min ft+D3 +0.018 base +nan A
+[39/42] WSe2_bilayer_2H
+    corrugation meV ft+D3 160.2 base 155.3 | K_shear eq ft+D3 +0.1767 base +0.2263 | K_zz eq ft+D3 +0.7214 | dz_min ft+D3 +0.006 base +nan A
+[40/42] WSe2_bilayer_3R
+    corrugation meV ft+D3 164.7 base 149.6 | K_shear eq ft+D3 +0.1590 base +0.1687 | K_zz eq ft+D3 +0.5782 | dz_min ft+D3 -0.000 base +nan A
+[41/42] WTe2_bilayer_2H
+    corrugation meV ft+D3 242.7 base 233.7 | K_shear eq ft+D3 +0.1913 base +0.1613 | K_zz eq ft+D3 +0.7709 | dz_min ft+D3 +0.014 base +nan A
+[42/42] WTe2_bilayer_3R
+    corrugation meV ft+D3 230.0 base 212.1 | K_shear eq ft+D3 +0.1908 base +0.1597 | K_zz eq ft+D3 +0.6903 | dz_min ft+D3 -0.016 base +nan A
+wrote phonon_comparisons/registry_landscape/v5_all/results.csv (2226 rows) and summary.csv (42 bilayers)

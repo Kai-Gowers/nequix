@@ -100,6 +100,20 @@ def relax_positions(atoms: Atoms, calc, fmax: float, max_steps: int, rattle: flo
     return atoms, info
 
 
+def split_gamma_modes(gamma: np.ndarray, n_ac: int = 3) -> tuple[np.ndarray, np.ndarray]:
+    """Split sorted Gamma frequencies into (acoustic, optical) by |f| instead of by sort position.
+
+    After symmetrize_force_constants (acoustic sum rule) the three acoustic modes sit at ~0 THz, but a soft
+    interlayer mode can be imaginary and then sorts *below* them, so "modes 3..5" would be 0;0;breathing and
+    the imaginary shear pair would be mislabelled as acoustic. Acoustic = the n_ac modes closest to zero.
+    """
+    gamma = np.asarray(gamma, dtype=float)
+    ac = np.argsort(np.abs(gamma))[:n_ac]
+    mask = np.ones(len(gamma), dtype=bool)
+    mask[ac] = False
+    return np.sort(gamma[ac]), np.sort(gamma[mask])
+
+
 def phonopy_bands(atoms: Atoms, calc, k: int):
     """Returns (distances, frequencies[nq, nbands], segment_edges, gamma_before, gamma_after, n_super)."""
     from phonopy import Phonopy
@@ -350,16 +364,17 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
             ase_write(str(out_dir / "relaxed_structures" / f"{name}_{tag}.vasp"), relaxed, format="vasp", direct=True)
         info["n_follow_rounds"] = n_follow
         n_ac = 3
+        ac_after, opt_after = split_gamma_modes(g_after, n_ac)
         print(f"  phonons[{tag}] supercell {n_super} atoms, Hessian+bands {t2 - t1:.0f} s; "
-              f"Gamma acoustic before ASR {np.round(g_before[:n_ac], 4)} -> after {np.round(g_after[:n_ac], 4)} THz; "
-              f"lowest Gamma optical {np.round(g_after[n_ac:n_ac + 3], 3)} THz; min {freqs.min():.4f}, max {freqs.max():.3f} THz")
+              f"Gamma acoustic before ASR {np.round(g_before[:n_ac], 4)} -> after {np.round(ac_after, 4)} THz; "
+              f"lowest Gamma optical {np.round(opt_after[:3], 3)} THz; min {freqs.min():.4f}, max {freqs.max():.3f} THz")
         for kk, v in info.items():
             row[f"{tag}_{kk}"] = v
         row.update({
             f"{tag}_supercell_atoms": n_super,
             f"{tag}_gamma_acoustic_before_asr_max_abs_THz": float(np.abs(g_before[:n_ac]).max()),
-            f"{tag}_gamma_acoustic_after_asr_max_abs_THz": float(np.abs(g_after[:n_ac]).max()),
-            f"{tag}_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in g_after[n_ac:n_ac + 3]),
+            f"{tag}_gamma_acoustic_after_asr_max_abs_THz": float(np.abs(ac_after).max()),
+            f"{tag}_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in opt_after[:3]),
             f"{tag}_min_freq_THz": float(freqs.min()),
             f"{tag}_max_freq_THz": float(freqs.max()),
             f"{tag}_n_imag_below_m0p05": int((freqs < -0.05).sum()),
@@ -399,8 +414,10 @@ def evaluate_structure(struct_dir: Path, calcs: dict, out_dir: Path, relax: str,
                 f"{tag}_dft_max_abs_err_THz": float(np.abs(err).max()),
                 f"{tag}_dft_rmse_below2THz_THz": float(np.sqrt((err[low] ** 2).mean())) if low.any() else float("nan"),
                 f"{tag}_dft_min_freq_THz": float(dft_ref["freqs"].min()),
-                f"{tag}_dft_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in np.sort(dft_ref["freqs"][0])[3:6]),
-                f"{tag}_dft_path_gamma_optical_lowest3_THz": ";".join(f"{x:.4f}" for x in np.sort(f_model[0])[3:6]),
+                f"{tag}_dft_gamma_optical_lowest3_THz": ";".join(
+                    f"{x:.4f}" for x in split_gamma_modes(dft_ref["freqs"][0])[1][:3]),
+                f"{tag}_dft_path_gamma_optical_lowest3_THz": ";".join(
+                    f"{x:.4f}" for x in split_gamma_modes(f_model[0])[1][:3]),
                 f"{tag}_dft_supercell_atoms": n_dft_super,
             })
             print(f"  vs DFT[{tag}] on the DFT {dft_ref['supercell_matrix'].diagonal().tolist()} supercell "

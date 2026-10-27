@@ -1,0 +1,15 @@
+cpu-bind=MASK - g017, task  0  0 [2241189]: mask 0x3fc0000 set
+D3 added to: finetuned; DFT references: ../workflow/FINAL_RESULTS_TWISTED
+
+=== MoS2_twist_m2_near0: 114 atoms, a_m=13.75 A, theta=, k=1 (114 supercell atoms), relax=none
+  phonons[ft] supercell 114 atoms, Hessian+bands 29 s; Gamma acoustic before ASR [-0.0009 -0.0005  0.0008] -> after [-0.  0.  0.] THz; lowest Gamma optical [0.094 0.094 0.9  ] THz; min -0.0051, max 14.032 THz
+  DOS[ft] mesh [34, 34, 1] sigma None THz: MAE vs DFT per atom 0-5 THz 0.01408, all 0.04463; RMSE 0-5 THz 0.02983, all 0.11118 -> phonon_comparisons/twisted/MoS2_twist_m2_near0/fixed/dos/MoS2_twist_m2_near0_ft_dos.dat
+  vs DFT[ft] on the DFT [1, 1, 1] supercell (114 atoms, 18 s): RMSE 0.0349 THz (<2 THz: 0.0539), max |err| 0.2022; Gamma lowest optical DFT 0.0169;0.0170;1.1027 vs model 0.0940;0.0940;0.9005
+  phonons[base] supercell 114 atoms, Hessian+bands 32 s; Gamma acoustic before ASR [-0.0008 -0.0005  0.0006] -> after [-0.  0.  0.] THz; lowest Gamma optical [0.142 0.142 1.236] THz; min -0.0054, max 13.871 THz
+  DOS[base] mesh [34, 34, 1] sigma None THz: MAE vs DFT per atom 0-5 THz 0.01916, all 0.10793; RMSE 0-5 THz 0.03983, all 0.23279 -> phonon_comparisons/twisted/MoS2_twist_m2_near0/fixed/dos/MoS2_twist_m2_near0_base_dos.dat
+  vs DFT[base] on the DFT [1, 1, 1] supercell (114 atoms, 18 s): RMSE 0.1967 THz (<2 THz: 0.0883), max |err| 0.6172; Gamma lowest optical DFT 0.0169;0.0170;1.1027 vs model 0.1421;0.1421;1.2356
+
+name                        theta  atoms  k steps  conv fol  slide    gap     minF    G-ASR  t_ph(s)
+MoS2_twist_m2_near0             -    114  1     -     -   0    nan    nan  -0.0051   0.0000       29
+
+Wrote phonon_comparisons/twisted/MoS2_twist_m2_near0/fixed/results.csv

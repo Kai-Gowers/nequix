@@ -1,0 +1,17 @@
+cpu-bind=MASK - g006, task  0  0 [2520810]: mask 0x3ec400 set
+D3 added to: finetuned; DFT references: ../workflow/FINAL_RESULTS_TWISTED
+
+=== MoS2_twist_m3_near0: 222 atoms, a_m=19.19 A, theta=9.430007907896421, k=1 (222 supercell atoms), relax=positions
+  relax[ft] steps=48 conv=True fmax 0.454->0.0009 eV/A  max_disp=0.161 A  layer_slide=0.000 A  gap 2.899->3.006 A  stress_inplane=+0.627 GPa  E/atom=-7.63729 eV
+  phonons[ft] supercell 222 atoms, Hessian+bands 64 s; Gamma acoustic before ASR [-0.0006  0.0005  0.001 ] -> after [-0. -0.  0.] THz; lowest Gamma optical [0.052 0.052 1.081] THz; min -0.0000, max 14.042 THz
+  DOS[ft] mesh [24, 24, 1] sigma None THz: MAE vs DFT per atom 0-5 THz 0.01608, all 0.05083; RMSE 0-5 THz 0.02661, all 0.14379 -> phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/dos/MoS2_twist_m3_near0_ft_dos.dat
+  vs DFT[ft] on the DFT [1, 1, 1] supercell (222 atoms, 44 s): RMSE 0.0335 THz (<2 THz: 0.0373), max |err| 0.1029; Gamma lowest optical DFT 0.0175;0.0182;1.0853 vs model 0.0517;0.0517;1.0808
+  relax[base] steps=64 conv=True fmax 0.758->0.0006 eV/A  max_disp=0.552 A  layer_slide=0.000 A  gap 2.899->3.953 A  stress_inplane=-3.377 GPa  E/atom=-7.26523 eV
+  phonons[base] supercell 222 atoms, Hessian+bands 63 s; Gamma acoustic before ASR [-0.0282 -0.0282  0.0002] -> after [-0.0282 -0.0282  0.    ] THz; lowest Gamma optical [0.    0.    0.852] THz; min -0.0282, max 13.817 THz
+  DOS[base] mesh [24, 24, 1] sigma None THz: MAE vs DFT per atom 0-5 THz 0.01839, all 0.10371; RMSE 0-5 THz 0.03236, all 0.25006 -> phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/dos/MoS2_twist_m3_near0_base_dos.dat
+  vs DFT[base] on the DFT [1, 1, 1] supercell (222 atoms, 42 s): RMSE 0.2124 THz (<2 THz: 0.0855), max |err| 0.5817; Gamma lowest optical DFT 0.0175;0.0182;1.0853 vs model 0.0000;0.0000;0.8520
+
+name                        theta  atoms  k steps  conv fol  slide    gap     minF    G-ASR  t_ph(s)
+MoS2_twist_m3_near0          9.43    222  1    48  True   0  0.000  3.006  -0.0000   0.0000       64
+
+Wrote phonon_comparisons/twisted/MoS2_twist_m3_near0/relaxpos/results.csv
